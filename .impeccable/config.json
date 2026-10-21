@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-10-21T19:53:08.267Z",
+        "reason": "diseño del tema Arcade Vault copiado intencionalmente de references/templates/styles.css a pedido del usuario"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-10-21T19:54:13.318Z",
+        "reason": "borde de acento en .hall-table .tr.you copiado intencionalmente de references/templates/styles.css a pedido del usuario, para resaltar la fila del jugador"
+      }
+    ]
+  }
+}
