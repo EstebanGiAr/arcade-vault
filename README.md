@@ -15,4 +15,9 @@ https://github.com/Klerith/fernando-skills
 npx skills@latest add Klerith/fernando-skills
 ```
 
-## Hola Mundo
+## Commands
+
+- `npm run dev` — inicia el servidor de desarrollo (Next.js con Turbopack).
+- `npm run build` — build de producción.
+- `npm run start` — sirve el build de producción.
+- `npm run lint` — ejecuta ESLint (`eslint.config.mjs`, basado en `eslint-config-next`).
