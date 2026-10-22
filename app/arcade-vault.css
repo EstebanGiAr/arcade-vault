@@ -97,7 +97,15 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== app frame ===== */
 #root { position: relative; z-index: 2; display: flex; flex-direction: column; min-height: 100%; }
-.av-main { flex: 1; }
+.av-main {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  /* Fuerza una capa de composición propia: sin esto, el contenido estático
+     (texto con fuente personalizada + text-shadow) queda sin repintar tras
+     la carga de la fuente, cerca del backdrop-filter del Nav (bug de Chromium). */
+  transform: translateZ(0);
+}
 
 /* ===== pixel + neon text ===== */
 .pixel { font-family: var(--pixel); letter-spacing: 0.04em; line-height: 1.25; text-transform: uppercase; }
