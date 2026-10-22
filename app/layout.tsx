@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Press_Start_2P, JetBrains_Mono, Courier_Prime } from "next/font/google";
 import "./globals.css";
 import "./arcade-vault.css";
+import { AuthProvider } from "@/components/auth-provider";
 
 const pressStart2P = Press_Start_2P({
   variable: "--font-pixel",
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es"
       className={`${pressStart2P.variable} ${jetBrainsMono.variable} ${courierPrime.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
