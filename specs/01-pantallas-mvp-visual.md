@@ -99,15 +99,15 @@ Cada paso deja el proyecto en estado funcional (`npm run dev` arranca sin errore
 
 - [ ] `npm run build` termina sin errores.
 - [ ] `npm run lint` no reporta errores.
-- [ ] `/` muestra el grid de los 8 juegos de `GAMES`, con buscador funcional y filtro por categoría (`TODOS`, `ARCADE`, `PUZZLE`, `SHOOTER`, `VERSUS`).
-- [ ] Al hacer clic en una tarjeta o en "JUGAR", se navega a `/juegos/[id]` con la info correcta del juego (portada, descripción, leaderboard, stats).
-- [ ] Desde el Detalle, "▶ JUGAR AHORA" navega a `/juegos/[id]/jugar` y muestra el HUD con puntaje que sube solo, vidas, nivel, pausa y botón de fin.
-- [ ] Al finalizar la partida, se puede guardar la puntuación con iniciales; tras guardar, aparece el mensaje de confirmación y la puntuación queda en `localStorage` (`av_scores`).
-- [ ] `/login` permite "iniciar sesión" con cualquier usuario/contraseña (mock), "crear cuenta", o entrar como invitado; tras cualquiera de las tres acciones, `Nav` refleja el estado de sesión (nombre de usuario o botón "Iniciar Sesión") en todas las rutas sin recargar manualmente.
-- [ ] Cerrar sesión desde `Nav` borra el usuario de `localStorage` y vuelve a mostrar "Iniciar Sesión".
-- [ ] `/salon-de-la-fama` muestra tabs por juego, podio top 3, tabla completa, y —si hay usuario en sesión— la fila "tu mejor marca".
-- [ ] El menú hamburguesa móvil abre/cierra el drawer y permite navegar a las mismas rutas que el menú de escritorio.
-- [ ] El tema visual (colores, tipografías Press Start 2P/JetBrains Mono, scanlines, grid animado, tilt 3D de tarjetas) se ve igual al prototipo de `references/templates/`.
+- [x] `/` muestra el grid de los 8 juegos de `GAMES`, con buscador funcional y filtro por categoría (`TODOS`, `ARCADE`, `PUZZLE`, `SHOOTER`, `VERSUS`).
+- [x] Al hacer clic en una tarjeta o en "JUGAR", se navega a `/juegos/[id]` con la info correcta del juego (portada, descripción, leaderboard, stats).
+- [x] Desde el Detalle, "▶ JUGAR AHORA" navega a `/juegos/[id]/jugar` y muestra el HUD con puntaje que sube solo, vidas, nivel, pausa y botón de fin.
+- [x] Al finalizar la partida, se puede guardar la puntuación con iniciales; tras guardar, aparece el mensaje de confirmación y la puntuación queda en `localStorage` (`av_scores`).
+- [x] `/login` permite "iniciar sesión" con cualquier usuario/contraseña (mock), "crear cuenta", o entrar como invitado; tras cualquiera de las tres acciones, `Nav` refleja el estado de sesión (nombre de usuario o botón "Iniciar Sesión") en todas las rutas sin recargar manualmente.
+- [x] Cerrar sesión desde `Nav` borra el usuario de `localStorage` y vuelve a mostrar "Iniciar Sesión".
+- [x] `/salon-de-la-fama` muestra tabs por juego, podio top 3, tabla completa, y —si hay usuario en sesión— la fila "tu mejor marca".
+- [x] El menú hamburguesa móvil abre/cierra el drawer y permite navegar a las mismas rutas que el menú de escritorio.
+- [x] El tema visual (colores, tipografías Press Start 2P/JetBrains Mono, scanlines, grid animado, tilt 3D de tarjetas) se ve igual al prototipo de `references/templates/`.
 
 ## Decisiones tomadas y descartadas
 
