@@ -36,14 +36,33 @@ export default function AboutPage() {
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.msg.trim()) {
       setShake(true);
       setTimeout(() => setShake(false), 400);
       return;
     }
-    setSent(form.name.trim());
+
+    setError(null);
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: form.name, email: form.email, message: form.msg }),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+
+      if (!data.ok) {
+        setError(data.error ?? "No se pudo enviar el mensaje. Intenta de nuevo más tarde.");
+        return;
+      }
+
+      setSent(form.name.trim());
+    } catch {
+      setError("No se pudo enviar el mensaje. Verifica tu conexión e intenta de nuevo.");
+    }
   };
 
   return (
