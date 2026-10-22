@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "app/arcade-vault.css"
+        ],
+        "createdAt": "2026-10-21T20:14:25.164Z",
+        "reason": "spec 01-pantallas-mvp-visual: port literal de references/templates/styles.css, fidelidad visual al prototipo pedida explicitamente por el usuario"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/arcade-vault.css"
+        ],
+        "createdAt": "2026-10-22T14:27:57.879Z",
+        "reason": "spec 01-pantallas-mvp-visual: port literal de references/templates/styles.css, fidelidad visual al prototipo (resalta la fila 'tu mejor marca' del salon de la fama)"
+      }
+    ]
+  }
+}
