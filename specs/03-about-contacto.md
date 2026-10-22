@@ -1,6 +1,6 @@
 # 03 — About page y envío de correo de contacto
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 01, SPEC 02
 **Fecha:** 2026-10-22
 
@@ -72,15 +72,15 @@ Cada paso deja el proyecto en estado funcional (`npm run dev` arranca sin errore
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] `/about` muestra el hero "ACERCA DE ARCADE VAULT", la fila de 3 highlights, el divisor animado y la sección de contacto, visualmente igual al prototipo de `references/templates/home-about/about.jsx`.
-- [ ] El `Nav` muestra el link "Acerca de" apuntando a `/about`, activo cuando `pathname === "/about"`, tanto en desktop como en el drawer móvil.
-- [ ] Si se intenta enviar el formulario con algún campo vacío, el formulario hace `shake` y no se envía la petición a `/api/contact`.
-- [ ] Al enviar el formulario completo correctamente, se recibe un correo real en `estebangiraldo445@gmail.com` con los datos ingresados.
-- [ ] Tras un envío exitoso, el formulario se reemplaza por el bloque `terminal-success` con el nombre ingresado, y "ENVIAR OTRO MENSAJE" vuelve a mostrar el formulario vacío.
-- [ ] Si `/api/contact` responde con error (ej. `RESEND_API_KEY` inválida), se muestra un mensaje de error dentro del formulario y los datos ingresados no se pierden.
-- [ ] Las secciones con la clase `reveal` en `/about` aparecen con la animación de fade/slide al hacer scroll hasta ellas.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] `/about` muestra el hero "ACERCA DE ARCADE VAULT", la fila de 3 highlights, el divisor animado y la sección de contacto, visualmente igual al prototipo de `references/templates/home-about/about.jsx`.
+- [x] El `Nav` muestra el link "Acerca de" apuntando a `/about`, activo cuando `pathname === "/about"`, tanto en desktop como en el drawer móvil.
+- [x] Si se intenta enviar el formulario con algún campo vacío, el formulario hace `shake` y no se envía la petición a `/api/contact`.
+- [x] Al enviar el formulario completo correctamente, se recibe un correo real en `estebangiraldo445@gmail.com` con los datos ingresados.
+- [x] Tras un envío exitoso, el formulario se reemplaza por el bloque `terminal-success` con el nombre ingresado, y "ENVIAR OTRO MENSAJE" vuelve a mostrar el formulario vacío.
+- [x] Si `/api/contact` responde con error (ej. `RESEND_API_KEY` inválida), se muestra un mensaje de error dentro del formulario y los datos ingresados no se pierden.
+- [x] Las secciones con la clase `reveal` en `/about` aparecen con la animación de fade/slide al hacer scroll hasta ellas.
 
 ## Decisiones tomadas y descartadas
 
