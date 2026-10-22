@@ -20,7 +20,7 @@ export function Nav() {
 
   const handleSignOut = () => {
     logout();
-    router.push("/");
+    router.push("/juegos");
   };
 
   return (
