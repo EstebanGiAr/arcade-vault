@@ -1,6 +1,6 @@
 # 02 — Home landing page
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 01
 **Fecha:** 2026-10-22
 
