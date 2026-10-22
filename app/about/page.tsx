@@ -154,7 +154,11 @@ export default function AboutPage() {
                     placeholder="Cuéntanos qué tienes en mente…"
                   ></textarea>
                 </div>
-                {error && <div className="term-body error" style={{ padding: 0 }}>{error}</div>}
+                {error && (
+                  <div className="term-body" style={{ padding: 0 }}>
+                    <div className="error">{error}</div>
+                  </div>
+                )}
                 <button className="btn xl press" type="submit" style={{ width: "100%" }}>
                   ▶ ENVIAR MENSAJE
                 </button>
