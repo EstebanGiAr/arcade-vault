@@ -24,6 +24,11 @@
 html, body, #root {
   height: 100%;
   margin: 0;
+  /* El drawer móvil (.av-mobile-panel) es position:fixed y, aunque queda
+     oculto fuera de pantalla con translateX, sigue contribuyendo al ancho
+     "scrolleable" del documento en algunos motores. overflow-x:hidden en
+     <html> (no solo en <body>) evita el scroll horizontal resultante. */
+  overflow-x: hidden;
 }
 
 body {
@@ -179,10 +184,11 @@ a { color: inherit; text-decoration: none; }
 .av-nav .hamburger { display: none; }
 
 @media (max-width: 840px) {
-  .av-nav { padding: 12px 16px; }
+  .av-nav { padding: 12px 16px; gap: 12px; }
   .av-nav .links { display: none; }
   .av-nav .coin-counter { display: none; }
   .av-nav .hamburger { display: inline-flex; }
+  .av-nav .auth-btn { margin-left: 0; }
 }
 
 .av-mobile-panel {

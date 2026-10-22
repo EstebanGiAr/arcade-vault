@@ -15,6 +15,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
+    // Lectura deliberadamente diferida al montaje en cliente para evitar
+    // mismatches de hidratación al leer localStorage (ver spec: riesgo de hidratación).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(getUser());
   }, []);
 
