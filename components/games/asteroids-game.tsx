@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
 const W = 800;
 const H = 600;
@@ -302,6 +302,11 @@ class Particle {
 
 type GameState = "playing" | "dead" | "gameover";
 
+export type AsteroidsGameHandle = {
+  restart: () => void;
+  forceGameOver: () => void;
+};
+
 export type AsteroidsGameProps = {
   paused: boolean;
   onScoreChange: (score: number) => void;
@@ -310,13 +315,13 @@ export type AsteroidsGameProps = {
   onGameOver: (finalScore: number) => void;
 };
 
-export function AsteroidsGame({
-  paused,
-  onScoreChange,
-  onLivesChange,
-  onLevelChange,
-  onGameOver,
-}: AsteroidsGameProps) {
+export const AsteroidsGame = forwardRef<
+  AsteroidsGameHandle,
+  AsteroidsGameProps
+>(function AsteroidsGame(
+  { paused, onScoreChange, onLivesChange, onLevelChange, onGameOver },
+  ref,
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pausedRef = useRef(paused);
   const resetTimeRef = useRef(false);
@@ -326,6 +331,19 @@ export function AsteroidsGame({
     onLevelChange,
     onGameOver,
   });
+  const actionsRef = useRef<AsteroidsGameHandle>({
+    restart: () => {},
+    forceGameOver: () => {},
+  });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      restart: () => actionsRef.current.restart(),
+      forceGameOver: () => actionsRef.current.forceGameOver(),
+    }),
+    [],
+  );
 
   useEffect(() => {
     if (pausedRef.current && !paused) {
@@ -622,6 +640,11 @@ export function AsteroidsGame({
       rafId = requestAnimationFrame(loop);
     }
 
+    actionsRef.current.restart = initGame;
+    actionsRef.current.forceGameOver = () => {
+      state = "gameover";
+    };
+
     initGame();
     rafId = requestAnimationFrame(loop);
 
@@ -633,4 +656,4 @@ export function AsteroidsGame({
   }, []);
 
   return <canvas ref={canvasRef} width={W} height={H} />;
-}
+});
