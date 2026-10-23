@@ -10,9 +10,10 @@ export type Game = {
   color: "cyan" | "magenta" | "yellow" | "green";
   best: number;
   plays: string;
+  isReal: boolean; // true = best/plays/puntuaciones vienen de Supabase
 };
 
-export const GAMES: Game[] = [
+export const FAKE_GAMES: Game[] = [
   {
     id: "bloque-buster",
     title: "BLOQUE BUSTER",
@@ -23,6 +24,7 @@ export const GAMES: Game[] = [
     color: "cyan",
     best: 28450,
     plays: "12.4K",
+    isReal: false,
   },
   {
     id: "caida",
@@ -34,6 +36,7 @@ export const GAMES: Game[] = [
     color: "magenta",
     best: 184220,
     plays: "31.8K",
+    isReal: false,
   },
   {
     id: "serpentina",
@@ -45,6 +48,7 @@ export const GAMES: Game[] = [
     color: "green",
     best: 7820,
     plays: "9.1K",
+    isReal: false,
   },
   {
     id: "gloton",
@@ -56,6 +60,7 @@ export const GAMES: Game[] = [
     color: "yellow",
     best: 96400,
     plays: "27.2K",
+    isReal: false,
   },
   {
     id: "invasores",
@@ -67,6 +72,7 @@ export const GAMES: Game[] = [
     color: "green",
     best: 54190,
     plays: "18.0K",
+    isReal: false,
   },
   {
     id: "rocas",
@@ -78,17 +84,7 @@ export const GAMES: Game[] = [
     color: "yellow",
     best: 41200,
     plays: "15.6K",
-  },
-  {
-    id: "asteroides",
-    title: "ASTEROIDES",
-    short: "Pulveriza un campo real de asteroides en gravedad cero.",
-    long: "Pilota tu nave en un espacio toroidal real: rota, propulsa y dispara para fragmentar rocas grandes en medianas y luego pequeñas. Recoge el power-up de disparo triple y sobrevive al mayor número de niveles posible.",
-    cat: "SHOOTER",
-    cover: "cover-asteroides",
-    color: "cyan",
-    best: 36500,
-    plays: "1.2K",
+    isReal: false,
   },
   {
     id: "ranaria",
@@ -100,6 +96,7 @@ export const GAMES: Game[] = [
     color: "green",
     best: 18900,
     plays: "6.4K",
+    isReal: false,
   },
   {
     id: "duelo-pixel",
@@ -111,6 +108,7 @@ export const GAMES: Game[] = [
     color: "cyan",
     best: 24,
     plays: "4.2K",
+    isReal: false,
   },
 ];
 
