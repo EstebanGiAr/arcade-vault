@@ -1,9 +1,13 @@
 import { notFound } from "next/navigation";
-import { GAMES } from "@/app/data";
+import { FAKE_GAMES } from "@/app/data";
+import { createClient } from "@/lib/supabase/server";
+import { getGameById, getRealGames } from "@/lib/games";
 import { GamePlayer } from "@/components/game-player";
 
-export function generateStaticParams() {
-  return GAMES.map((g) => ({ id: g.id }));
+export async function generateStaticParams() {
+  const supabase = await createClient();
+  const realGames = await getRealGames(supabase);
+  return [...FAKE_GAMES, ...realGames].map((g) => ({ id: g.id }));
 }
 
 export default async function GamePlayerPage({
@@ -12,7 +16,8 @@ export default async function GamePlayerPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const game = GAMES.find((g) => g.id === id);
+  const supabase = await createClient();
+  const game = await getGameById(supabase, id);
 
   if (!game) {
     notFound();
