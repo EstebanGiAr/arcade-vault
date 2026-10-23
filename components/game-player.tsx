@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/app/data";
-import { saveScore } from "@/lib/storage";
+import { saveScore as saveLocalScore } from "@/lib/storage";
+import { saveScore as saveRealScore } from "@/lib/scores";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth-provider";
 import {
   AsteroidsGame,
@@ -23,6 +25,8 @@ export function GamePlayer({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   const [name, setName] = useState(user ? user.name : "INVITADO");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const level = isAsteroides ? asteroidsLevel : Math.floor(score / 2500) + 1;
 
@@ -54,6 +58,28 @@ export function GamePlayer({ game }: { game: Game }) {
     setPaused(false);
     setOver(false);
     setSaved(false);
+    setSaving(false);
+    setSaveError(null);
+  };
+
+  const handleSave = async () => {
+    if (!game.isReal) {
+      saveLocalScore({ game: game.id, score, name });
+      setSaved(true);
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const supabase = createClient();
+      await saveRealScore(supabase, { gameId: game.id, name, score });
+      setSaved(true);
+    } catch {
+      setSaveError("No se pudo guardar la puntuación. Inténtalo de nuevo.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -160,16 +186,35 @@ export function GamePlayer({ game }: { game: Game }) {
                     setName(e.target.value.toUpperCase().slice(0, 10))
                   }
                   placeholder="TUS INICIALES"
+                  disabled={saving}
                 />
                 <button
                   className="btn yellow"
-                  onClick={() => {
-                    saveScore({ game: game.id, score, name });
-                    setSaved(true);
-                  }}
+                  onClick={handleSave}
+                  disabled={saving}
                 >
-                  GUARDAR PUNTUACIÓN
+                  {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
                 </button>
+                {saveError && (
+                  <div
+                    className="mono"
+                    style={{
+                      width: "100%",
+                      color: "var(--magenta)",
+                      fontSize: 11,
+                      marginTop: 8,
+                    }}
+                  >
+                    {saveError}{" "}
+                    <button
+                      className="btn ghost"
+                      style={{ marginLeft: 8 }}
+                      onClick={handleSave}
+                    >
+                      REINTENTAR
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
