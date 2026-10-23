@@ -400,7 +400,10 @@ export const AsteroidsGame = forwardRef<
       return val;
     }
 
+    const GAME_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "Space"]);
+
     const onKeyDown = (e: KeyboardEvent) => {
+      if (GAME_KEYS.has(e.code)) e.preventDefault();
       if (!keys[e.code]) justPressed[e.code] = true;
       keys[e.code] = true;
     };
