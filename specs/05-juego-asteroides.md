@@ -1,6 +1,6 @@
 # 05 — Juego real de Asteroides (nueva entrada "asteroides")
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** —
 **Fecha:** 2026-10-23
 
