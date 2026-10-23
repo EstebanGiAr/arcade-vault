@@ -1,6 +1,6 @@
 # 04 — Conexión de Supabase con el proyecto
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** —
 **Fecha:** 2026-10-23
 
