@@ -462,7 +462,7 @@ export const AsteroidsGame = forwardRef<
 
     function update(dt: number) {
       if (state === "gameover") {
-        if (pressed("Space")) initGame();
+        // El reinicio solo ocurre vía restart() invocado desde React, para evitar reinicios duplicados.
         particles.forEach((p) => p.update(dt));
         particles = particles.filter((p) => !p.dead);
         return;
