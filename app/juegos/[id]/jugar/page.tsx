@@ -1,9 +1,16 @@
 import { notFound } from "next/navigation";
-import { GAMES } from "@/app/data";
+import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
+import { getGameById, getRealGames } from "@/lib/games";
 import { GamePlayer } from "@/components/game-player";
 
-export function generateStaticParams() {
-  return GAMES.map((g) => ({ id: g.id }));
+// getGameById consulta `scores` en vivo (best/plays), así que no puede
+// prerenderizarse como shell estático bajo cacheComponents.
+export const instant = false;
+
+export async function generateStaticParams() {
+  const realGames = await getRealGames(createStaticClient());
+  return realGames.map((g) => ({ id: g.id }));
 }
 
 export default async function GamePlayerPage({
@@ -12,7 +19,8 @@ export default async function GamePlayerPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const game = GAMES.find((g) => g.id === id);
+  const supabase = await createClient();
+  const game = await getGameById(supabase, id);
 
   if (!game) {
     notFound();
