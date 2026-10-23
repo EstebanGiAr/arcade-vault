@@ -302,8 +302,22 @@ class Particle {
 
 type GameState = "playing" | "dead" | "gameover";
 
-export function AsteroidsGame() {
+export type AsteroidsGameProps = {
+  paused: boolean;
+};
+
+export function AsteroidsGame({ paused }: AsteroidsGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pausedRef = useRef(paused);
+  const resetTimeRef = useRef(false);
+
+  useEffect(() => {
+    if (pausedRef.current && !paused) {
+      // Al despausar, evita que el próximo frame acumule el tiempo transcurrido en pausa.
+      resetTimeRef.current = true;
+    }
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -548,9 +562,13 @@ export function AsteroidsGame() {
     let rafId = 0;
 
     function loop(ts: number) {
+      if (resetTimeRef.current) {
+        lastTime = null;
+        resetTimeRef.current = false;
+      }
       const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
       lastTime = ts;
-      update(dt);
+      if (!pausedRef.current) update(dt);
       draw();
       rafId = requestAnimationFrame(loop);
     }
