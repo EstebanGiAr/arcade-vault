@@ -304,12 +304,28 @@ type GameState = "playing" | "dead" | "gameover";
 
 export type AsteroidsGameProps = {
   paused: boolean;
+  onScoreChange: (score: number) => void;
+  onLivesChange: (lives: number) => void;
+  onLevelChange: (level: number) => void;
+  onGameOver: (finalScore: number) => void;
 };
 
-export function AsteroidsGame({ paused }: AsteroidsGameProps) {
+export function AsteroidsGame({
+  paused,
+  onScoreChange,
+  onLivesChange,
+  onLevelChange,
+  onGameOver,
+}: AsteroidsGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pausedRef = useRef(paused);
   const resetTimeRef = useRef(false);
+  const callbacksRef = useRef({
+    onScoreChange,
+    onLivesChange,
+    onLevelChange,
+    onGameOver,
+  });
 
   useEffect(() => {
     if (pausedRef.current && !paused) {
@@ -318,6 +334,15 @@ export function AsteroidsGame({ paused }: AsteroidsGameProps) {
     }
     pausedRef.current = paused;
   }, [paused]);
+
+  useEffect(() => {
+    callbacksRef.current = {
+      onScoreChange,
+      onLivesChange,
+      onLevelChange,
+      onGameOver,
+    };
+  }, [onScoreChange, onLivesChange, onLevelChange, onGameOver]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -356,6 +381,10 @@ export function AsteroidsGame({ paused }: AsteroidsGameProps) {
     let state: GameState = "playing";
     let deadTimer = 0;
     let powerUpSpawned = false;
+    let prevScore = score;
+    let prevLives = lives;
+    let prevLevel = level;
+    let prevState: GameState = state;
     let killsSinceSpawn = 0;
 
     function spawnAsteroids(count: number) {
@@ -528,6 +557,25 @@ export function AsteroidsGame({ paused }: AsteroidsGameProps) {
       }
     }
 
+    function reportChanges() {
+      if (score !== prevScore) {
+        prevScore = score;
+        callbacksRef.current.onScoreChange(score);
+      }
+      if (lives !== prevLives) {
+        prevLives = lives;
+        callbacksRef.current.onLivesChange(lives);
+      }
+      if (level !== prevLevel) {
+        prevLevel = level;
+        callbacksRef.current.onLevelChange(level);
+      }
+      if (state === "gameover" && prevState !== "gameover") {
+        callbacksRef.current.onGameOver(score);
+      }
+      prevState = state;
+    }
+
     function drawOverlay(title: string, sub: string) {
       ctx.textAlign = "center";
       ctx.fillStyle = "#fff";
@@ -569,6 +617,7 @@ export function AsteroidsGame({ paused }: AsteroidsGameProps) {
       const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
       lastTime = ts;
       if (!pausedRef.current) update(dt);
+      reportChanges();
       draw();
       rafId = requestAnimationFrame(loop);
     }
