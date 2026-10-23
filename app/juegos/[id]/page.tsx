@@ -1,14 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FAKE_GAMES, seededScores } from "@/app/data";
 import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
 import { getGameById, getRealGames } from "@/lib/games";
 import { getTopScores } from "@/lib/scores";
 
+// Esta página consulta `scores` en vivo (best/plays/leaderboard), así que no
+// puede prerenderizarse como shell estático bajo cacheComponents.
+export const instant = false;
+
 export async function generateStaticParams() {
-  const supabase = await createClient();
-  const realGames = await getRealGames(supabase);
-  return [...FAKE_GAMES, ...realGames].map((g) => ({ id: g.id }));
+  const realGames = await getRealGames(createStaticClient());
+  return realGames.map((g) => ({ id: g.id }));
 }
 
 export default async function GameDetailPage({
@@ -24,14 +27,12 @@ export default async function GameDetailPage({
     notFound();
   }
 
-  const scores = game.isReal
-    ? (await getTopScores(supabase, id, 10)).map((s, i) => ({
-        rank: i + 1,
-        name: s.name,
-        score: s.score,
-        date: new Date(s.createdAt).toLocaleDateString("es-ES"),
-      }))
-    : seededScores(id.length * 17 + 3, 10);
+  const scores = (await getTopScores(supabase, id, 10)).map((s, i) => ({
+    rank: i + 1,
+    name: s.name,
+    score: s.score,
+    date: new Date(s.createdAt).toLocaleDateString("es-ES"),
+  }));
 
   return (
     <div className="av-detail fade-in">

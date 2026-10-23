@@ -1,35 +1,37 @@
 # 06 — Catálogo y leaderboard reales en Supabase (solo juegos implementados)
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 04, SPEC 05
 **Fecha:** 2026-10-23
+**Actualizado:** 2026-10-23 — decisión del usuario durante la implementación: se elimina por completo el catálogo de juegos falsos/decorativos. Ver "Decisiones tomadas y descartadas".
 
-**Objetivo:** Crear en Supabase las tablas `games` y `scores`, pero poblar `games` únicamente con los juegos que ya están realmente implementados (por ahora, solo `asteroides`), dejando los otros 8 juegos del catálogo exactamente como están hoy (hardcodeados en `app/data.ts`, con datos falsos y `GamePlayer` decorativo), y combinando ambas fuentes de forma transparente en todas las pantallas.
+**Objetivo:** Crear en Supabase las tablas `games` y `scores`, y mostrar en el catálogo y el salón de la fama **únicamente** los juegos que ya están realmente implementados (por ahora, solo `asteroides`). Los otros 8 juegos decorativos (`bloque-buster`, `caída`, `serpentina`, `glotón`, `invasores`, `rocas`, `ranaria`, `duelo-pixel`) se eliminan del catálogo y de todas las pantallas; dejan de existir como datos hardcodeados en `app/data.ts`.
 
 ## Alcance
 
 **Incluido:**
 
-- Tabla `games` en Supabase, poblada por ahora con una sola fila: `asteroides` (el único juego cuya lógica real existe, ver SPEC 05). El resto de los 9 juegos actuales de `GAMES` (`bloque-buster`, `caída`, `serpentina`, `glotón`, `invasores`, `rocas`, `ranaria`, `duelo-pixel`) permanece hardcodeado en `app/data.ts`, sin tocar.
-- Tabla `scores` en Supabase, append-only (solo `SELECT` e `INSERT` vía RLS), que guarda las puntuaciones reales de los juegos que están en la tabla `games` (hoy, solo `asteroides`). Las puntuaciones de los otros 8 juegos siguen guardándose en `localStorage` exactamente como hoy (`lib/storage.ts`, sin cambios).
-- Para los juegos presentes en la tabla `games`: `best` (mejor puntuación) y `plays` (veces jugado) se calculan en vivo a partir de `scores` (`best = MAX(score)`, `plays = COUNT(*)`), en vez de usar un valor fijo.
-- `app/data.ts` agrega un campo `isReal: boolean` al tipo `Game`, y una función `getAllGames()` (o equivalente) que combina los juegos reales de Supabase con el array hardcodeado de los 8 juegos falsos restantes, devolviendo una sola lista unificada en el mismo orden visual que hoy.
-- `lib/games.ts` y `lib/scores.ts`: funciones de acceso a datos para la parte real (Supabase), parametrizadas para aceptar tanto el cliente de navegador como el de servidor.
-- Todas las pantallas que hoy leen el array `GAMES` completo (`/`, `/juegos`, `/juegos/[id]`, `/juegos/[id]/jugar`, `/salon-de-la-fama`) pasan a leer la lista combinada (`getAllGames()`), sin cambiar su comportamiento visual para los 8 juegos falsos.
-- `components/game-player.tsx`: cuando `game.isReal` es `true` (hoy, solo para `asteroides`), el botón "GUARDAR PUNTUACIÓN" inserta en la tabla `scores` de Supabase; cuando `game.isReal` es `false`, sigue llamando a `saveScore` de `lib/storage.ts` exactamente como hoy.
-- En `/juegos/[id]` y `/salon-de-la-fama`: cuando el juego es real, el leaderboard y las estadísticas vienen de Supabase; cuando es falso, siguen viniendo de `seededScores` exactamente como hoy (incluyendo la sección "TU MEJOR MARCA" para juegos falsos, sin cambios).
-- Estados vacíos explícitos solo para juegos reales sin puntuaciones todavía: "Mejor global" muestra `0` y "Partidas" muestra `0`; en `/salon-de-la-fama`, el podio/tabla de un juego real sin puntuaciones muestra "AÚN NADIE HA JUGADO". Los juegos falsos nunca entran en este caso (siempre tienen datos de ejemplo vía `seededScores`).
-- Diseñado para extenderse sin cambios de código: cuando se implemente un nuevo juego real en el futuro, basta con insertar una fila nueva en `games` (vía migración/seed de ese spec futuro) — `getAllGames()` ya combina dinámicamente cualquier juego presente en la tabla, sin que su id esté hardcodeado en la lógica de combinación.
+- Tabla `games` en Supabase, poblada por ahora con una sola fila: `asteroides` (el único juego cuya lógica real existe, ver SPEC 05).
+- Tabla `scores` en Supabase, append-only (solo `SELECT` e `INSERT` vía RLS), que guarda las puntuaciones reales de los juegos presentes en `games`.
+- `best` (mejor puntuación) y `plays` (veces jugado) se calculan en vivo a partir de `scores` (`best = MAX(score)`, `plays = COUNT(*)`).
+- `app/data.ts` deja de contener el catálogo hardcodeado de 8 juegos falsos (`GAMES`/`FAKE_GAMES`) y sus datos de ejemplo (`PLAYERS`, `seededScores`). El tipo `Game` ya no necesita distinguir real/falso (`isReal`) porque todo juego mostrado proviene de Supabase.
+- `lib/games.ts` y `lib/scores.ts`: funciones de acceso a datos para Supabase, parametrizadas para aceptar tanto el cliente de navegador como el de servidor.
+- Todas las pantallas que hoy leen el catálogo (`/`, `/juegos`, `/juegos/[id]`, `/juegos/[id]/jugar`, `/salon-de-la-fama`) pasan a leer exclusivamente `getAllGames()` (equivalente a los juegos reales de Supabase).
+- `components/game-player.tsx`: el botón "GUARDAR PUNTUACIÓN" siempre inserta en la tabla `scores` de Supabase (ya no hay rama de guardado en `localStorage` para juegos falsos).
+- En `/juegos/[id]` y `/salon-de-la-fama`: el leaderboard y las estadísticas siempre vienen de Supabase.
+- `lib/storage.ts` conserva únicamente `getUser`/`setUser` (sesión fake de usuario, sin relación con juegos); se eliminan `saveScore`/`getScores`/`SavedScore`, que quedan sin consumidores tras retirar el catálogo falso.
+- Estados vacíos explícitos para juegos sin puntuaciones todavía: "Mejor global" muestra `0` y "Partidas" muestra `0`; en `/salon-de-la-fama`, el podio/tabla de un juego sin puntuaciones muestra "AÚN NADIE HA JUGADO".
+- Diseñado para extenderse sin cambios de código: cuando se implemente un nuevo juego real en el futuro, basta con insertar una fila nueva en `games` — `getAllGames()` ya combina dinámicamente cualquier juego presente en la tabla, sin que su id esté hardcodeado en la lógica.
 
 **No incluido (fuera de alcance de este spec):**
 
 - Cualquier UI de administración para crear, editar o eliminar juegos en la tabla `games`. Se puebla a mano, una sola fila, vía migración/seed.
-- Migrar cualquiera de los otros 8 juegos a Supabase. Siguen siendo decorativos/falsos hasta que exista un spec que implemente su lógica real (igual que ocurrió con `asteroides` en SPEC 05).
 - Autenticación real contra Supabase — las puntuaciones reales de `asteroides` siguen identificándose solo por nombre/iniciales, sin vincularse a un usuario autenticado. Decisión ya tomada en SPEC 04, no se reabre aquí.
 - Edición o borrado de puntuaciones ya guardadas en `scores` (append-only).
-- Fallback a `localStorage` para juegos reales si Supabase falla, o fallback a Supabase para juegos falsos. Cada juego usa una sola fuente de datos según `isReal`, sin mezclar.
-- Las secciones `ACTIVITY`/`TOP_PLAYERS` (datos ficticios de "actividad en vivo") de `app/page.tsx`, y las estrellas de "Dificultad" en `/juegos/[id]`: siguen siendo valores fijos, sin relación con datos reales.
+- Fallback a `localStorage` para juegos reales si Supabase falla.
+- Las secciones `ACTIVITY`/`TOP_PLAYERS` (datos ficticios de "actividad en vivo") de `app/page.tsx`, y las estrellas de "Dificultad" en `/juegos/[id]`: siguen siendo valores fijos, sin relación con datos reales — no forman parte del catálogo de juegos y no se tocan.
 - Rediseño visual de cualquiera de las pantallas afectadas.
+- Reintroducir un catálogo de juegos decorativos/falsos — si en el futuro se quiere volver a mostrar juegos "próximamente" sin lógica real, eso requiere un spec nuevo que reintroduzca esa distinción.
 
 ## Modelo de datos
 
@@ -79,8 +81,7 @@ create policy "scores_insert_public" on public.scores for insert with check (tru
 ```
 
 ```ts
-// app/data.ts — tipo Game con el nuevo campo isReal; FAKE_GAMES reemplaza al GAMES actual
-// (mismos 8 juegos de siempre, sin "asteroides", con best/plays fijos como hoy)
+// app/data.ts — sin catálogo hardcodeado; el tipo Game ya no distingue real/falso
 export type Game = {
   id: string;
   title: string;
@@ -91,30 +92,26 @@ export type Game = {
   color: "cyan" | "magenta" | "yellow" | "green";
   best: number;
   plays: string;
-  isReal: boolean; // true = best/plays/puntuaciones vienen de Supabase
 };
-
-export const FAKE_GAMES: Game[] = [
-  /* los 8 juegos actuales, sin "asteroides", con isReal: false */
-];
 ```
 
 ```ts
 // lib/games.ts
 export async function getRealGames(
   supabase: SupabaseClient<Database>,
-): Promise<Game[]>; // best/plays calculados desde scores, isReal: true
+): Promise<Game[]>; // best/plays calculados desde scores
 
 export async function getAllGames(
   supabase: SupabaseClient<Database>,
-): Promise<Game[]>; // getRealGames() + FAKE_GAMES, en el orden visual actual del catálogo
+): Promise<Game[]>; // hoy, equivalente a getRealGames(); conserva el nombre
+// para que pantallas y futuros juegos reales no cambien de API
 
 export async function getGameById(
   supabase: SupabaseClient<Database>,
   id: string,
-): Promise<Game | null>; // busca primero en Supabase; si no está, busca en FAKE_GAMES
+): Promise<Game | null>;
 
-// lib/scores.ts (solo para juegos reales)
+// lib/scores.ts
 export async function saveScore(
   supabase: SupabaseClient<Database>,
   entry: { gameId: string; name: string; score: number },
@@ -139,51 +136,49 @@ export async function getBestScoreByName(
 
 Cada paso deja el proyecto en estado funcional (`npm run dev` arranca sin errores).
 
-1. Crear la migración con `mcp__supabase__apply_migration`: tablas `games` y `scores`, índice, RLS y policies (ver arriba), incluyendo el `insert` inicial de la fila `asteroides`.
-2. Generar tipos con `mcp__supabase__generate_typescript_types` y guardarlos en `lib/supabase/database.types.ts`; tipar `createClient()` en `lib/supabase/client.ts` y `lib/supabase/server.ts` con `SupabaseClient<Database>`.
-3. En `app/data.ts`: quitar la entrada `asteroides` del array `GAMES` actual y renombrarlo a `FAKE_GAMES` (mismos 8 juegos, mismos valores de `best`/`plays`, agregando `isReal: false` a cada uno); agregar el campo `isReal` al tipo `Game`.
-4. Crear `lib/games.ts` (`getRealGames`, `getAllGames`, `getGameById`): `getRealGames` consulta `games` + agregación de `scores` (`MAX(score)`, `COUNT(*)`) y devuelve objetos `Game` con `isReal: true`; `getAllGames` combina `getRealGames()` con `FAKE_GAMES` y ordena la lista para que `asteroides` quede en la misma posición visual que ocupa hoy en el catálogo (entre `rocas` y `ranaria`).
-5. Crear `lib/scores.ts` (`saveScore`, `getTopScores`, `getBestScoreByName`), usando el índice `scores_game_id_score_idx`.
-6. Refactorizar `app/juegos/page.tsx` a Server Component async que llama a `getAllGames()` y pasa la lista a un componente cliente `components/games-browser.tsx` con la lógica de filtro actual (`useState`), sin re-consultar Supabase en cada tecleo/clic.
-7. Refactorizar `app/page.tsx`: mover el contenido actual a `components/home-content.tsx` (recibe `games: Game[]` como prop para el rail "JUEGOS DISPONIBLES AHORA"); `app/page.tsx` pasa a ser Server Component async que llama a `getAllGames()`.
-8. Refactorizar `app/juegos/[id]/page.tsx`: usar `getGameById(id)` en vez de `GAMES.find`; si `game.isReal` es `true`, usar `getTopScores(id, 10)` para el panel "MEJORES PUNTUACIONES" y los valores reales de `best`/`plays`; si es `false`, seguir usando `seededScores` exactamente como hoy.
-9. Refactorizar `app/juegos/[id]/jugar/page.tsx`: usar `getGameById(id)`; `generateStaticParams` combina los ids de `FAKE_GAMES` (estático) con los ids reales obtenidos de `getRealGames()` (async).
-10. Actualizar `components/game-player.tsx`: al guardar la puntuación, si `game.isReal` es `true` llamar a `saveScore` de `lib/scores.ts` (cliente de navegador) de forma asíncrona, deshabilitando el botón mientras se guarda y mostrando un error inline con opción de reintentar si falla; si `game.isReal` es `false`, seguir llamando a `saveScore` de `lib/storage.ts` exactamente como hoy.
-11. Refactorizar `app/salon-de-la-fama/page.tsx`: Server Component async que obtiene `getAllGames()` y las puntuaciones iniciales de la primera pestaña (reales o `seededScores` según `isReal`), pasándolo a un componente cliente (ej. `components/hall-of-fame-tabs.tsx`) que, al cambiar de pestaña, usa `getTopScores` (si `isReal`) o `seededScores` (si no) según corresponda.
-12. En ese componente cliente, para pestañas con `isReal: true`, implementar "TU MEJOR MARCA" buscando con `getBestScoreByName` la mejor fila cuyo `name` coincida (case-insensitive) con `user.name`; si no hay coincidencia, no se muestra la sección. Para pestañas con `isReal: false`, mantener el cálculo fake actual (`youRank`/`youScore`) sin cambios.
-13. Prueba manual: jugar una partida de `asteroides`, guardar la puntuación y verificar que aparece de inmediato en `/juegos/asteroides` (mejor global/partidas actualizados) y en la pestaña "ASTEROIDES" de `/salon-de-la-fama`; verificar que los 8 juegos falsos siguen funcionando exactamente igual que antes (datos de ejemplo, guardado en `localStorage`); verificar el estado vacío jugando con una base de datos recién migrada (antes de guardar ninguna puntuación real).
+1. Crear la migración con `mcp__supabase__apply_migration`: tablas `games` y `scores`, índice, RLS y policies (ver arriba), incluyendo el `insert` inicial de la fila `asteroides`. ✅ Implementado.
+2. Generar tipos con `mcp__supabase__generate_typescript_types` y guardarlos en `lib/supabase/database.types.ts`; tipar `createClient()` en `lib/supabase/client.ts` y `lib/supabase/server.ts` con `SupabaseClient<Database>`. ✅ Implementado.
+3. En `app/data.ts`: eliminar el catálogo hardcodeado (`GAMES`/`FAKE_GAMES`), `PLAYERS` y `seededScores`; el tipo `Game` pierde el campo `isReal` (ya no hace falta distinguir real/falso). Conservar `GameCategory`, `Game`, `CATS` y el tipo `ScoreRow` (fila de leaderboard para UI).
+4. En `lib/games.ts`: `getRealGames` sin cambios de fondo (consulta `games` + agregación de `scores`); `getAllGames` pasa a ser un simple alias/wrapper de `getRealGames` (se conserva el nombre por claridad semántica y porque pantallas y futuros juegos reales seguirán llamándolo igual); `getGameById` ya no necesita caer a `FAKE_GAMES`.
+5. `lib/scores.ts` sin cambios (`saveScore`, `getTopScores`, `getBestScoreByName`).
+6. `app/juegos/page.tsx` / `components/games-browser.tsx`: sin cambios de fondo, ahora listan solo juegos reales.
+7. `app/page.tsx` / `components/home-content.tsx`: sin cambios de fondo.
+8. `app/juegos/[id]/page.tsx`: eliminar la rama `isReal` falsa y el uso de `seededScores`; siempre usa `getGameById` + `getTopScores`. `generateStaticParams` ya no combina con `FAKE_GAMES`, solo usa `getRealGames`.
+9. `app/juegos/[id]/jugar/page.tsx`: igual, `generateStaticParams` solo usa `getRealGames` (ya no hay ids estáticos de juegos falsos que combinar).
+10. `components/game-player.tsx`: eliminar la rama `isReal` falsa; el guardado de puntuación siempre llama a `saveRealScore` de `lib/scores.ts`, con el mismo manejo de estado de guardado/error/reintento.
+11. `app/salon-de-la-fama/page.tsx` / `components/hall-of-fame-tabs.tsx`: eliminar la rama `isReal` falsa, `seededScores`, y el cálculo fake `youRank`/`youScore`; el leaderboard y "TU MEJOR MARCA" siempre vienen de Supabase vía `getTopScores`/`getBestScoreByName`.
+12. `lib/storage.ts`: eliminar `saveScore`, `getScores`, `SavedScore` (sin consumidores tras el paso 10); conservar `getUser`/`setUser`/`SessionUser` para la sesión fake de usuario.
+13. Prueba manual: confirmar que `/juegos` muestra solo la tarjeta de `asteroides`, que `/` y `/salon-de-la-fama` reflejan lo mismo, y que el flujo de jugar/guardar/leaderboard sigue funcionando.
 14. Correr `npm run lint` y `npm run build`, corrigiendo cualquier error de tipado o de ESLint antes de dar por cerrado el spec.
 
 ## Criterios de aceptación
 
 - [ ] `npm run build` termina sin errores.
 - [ ] `npm run lint` no reporta errores.
-- [ ] `mcp__supabase__list_tables` muestra `games` (1 fila: `asteroides`) y `scores` (vacía al inicio), ambas con RLS habilitado.
-- [ ] `/juegos` muestra las 9 tarjetas de siempre (8 falsas + `asteroides`), en el mismo orden visual que antes de este spec.
+- [ ] `mcp__supabase__list_tables` muestra `games` (1 fila: `asteroides`) y `scores`, ambas con RLS habilitado.
+- [ ] `/juegos` muestra únicamente la tarjeta de `asteroides` (ningún juego falso/decorativo).
+- [ ] `/` y `/salon-de-la-fama` también reflejan únicamente `asteroides`.
 - [ ] Jugar una partida de `asteroides` y pulsar "GUARDAR PUNTUACIÓN" inserta una fila real en la tabla `scores` de Supabase.
 - [ ] Si esa inserción falla (ej. sin conexión), se muestra un error inline y se puede reintentar sin perder la puntuación final mostrada en pantalla.
 - [ ] `/juegos/asteroides` muestra "Mejor global" y "Partidas" calculados en vivo desde `scores`, y el panel de mejores puntuaciones muestra filas reales.
-- [ ] Antes de guardar ninguna puntuación real, `/juegos/asteroides` muestra `0` en "Mejor global" y "Partidas", y la pestaña "ASTEROIDES" de `/salon-de-la-fama` muestra "AÚN NADIE HA JUGADO" en vez de un podio con errores.
-- [ ] Los otros 8 juegos (`bloque-buster`, `caída`, `serpentina`, `glotón`, `invasores`, `rocas`, `ranaria`, `duelo-pixel`) siguen mostrando exactamente los mismos datos falsos de siempre (`best`/`plays` fijos, `seededScores` en sus fichas y en `/salon-de-la-fama`, guardado de puntuaciones en `localStorage`), sin ningún cambio de comportamiento.
+- [ ] Antes de guardar ninguna puntuación, `/juegos/asteroides` muestra `0` en "Mejor global" y "Partidas", y la pestaña "ASTEROIDES" de `/salon-de-la-fama` muestra "AÚN NADIE HA JUGADO".
 - [ ] Con sesión fake iniciada y una puntuación real de `asteroides` guardada con un `name` que coincide (case-insensitive) con el nombre de la sesión, la pestaña "ASTEROIDES" de `/salon-de-la-fama` muestra "TU MEJOR MARCA" con esa puntuación real.
-- [ ] `lib/storage.ts` sigue exportando `saveScore`/`getScores`/`SavedScore` sin cambios, y sigue siendo usado para los 8 juegos falsos.
+- [ ] `lib/storage.ts` solo exporta `getUser`/`setUser`/`SessionUser`; no quedan referencias a `saveScore`/`getScores`/`SavedScore` de `localStorage` en el código.
+- [ ] `app/data.ts` no contiene ningún juego hardcodeado ni `seededScores`/`PLAYERS`.
 
 ## Decisiones tomadas y descartadas
 
-- **La tabla `games` solo incluye juegos con lógica real implementada (hoy, únicamente `asteroides`).** Razón: decisión explícita del usuario — no tiene sentido migrar a Supabase juegos que todavía son decorativos/falsos; cada juego entra a la tabla cuando se implementa de verdad (como ya ocurrió con `asteroides` en SPEC 05).
-- **Los otros 8 juegos permanecen hardcodeados en `app/data.ts` (`FAKE_GAMES`), con datos falsos y guardado en `localStorage`, sin ningún cambio.** Razón: decisión explícita del usuario — mezclar dos fuentes de datos (Supabase para lo real, hardcode para lo falso) es preferible a migrar prematuramente juegos sin lógica real solo para "unificar" la fuente de datos.
-- **Campo `isReal: boolean` en el tipo `Game`**, usado para decidir en cada pantalla si los datos/acciones vienen de Supabase o del comportamiento fake actual. Razón: evita repetir comparaciones de id como `game.id === "asteroides"` en cada archivo que necesita esta distinción (detalle, salón de la fama, guardado de puntuación); es una bandera mínima, no una abstracción de "motor de juego" genérica.
+- **Se elimina por completo el catálogo de juegos falsos/decorativos.** Razón: decisión explícita del usuario, tomada durante la implementación de este spec (2026-10-23) — ya no tiene sentido mantener 8 juegos de relleno sin lógica real; el catálogo debe mostrar únicamente lo que existe de verdad. Esto reemplaza la decisión original del spec (que mantenía los 8 juegos falsos hardcodeados).
+- **Se elimina el campo `isReal` y toda la ramificación real/falso asociada**, en lugar de conservarla "por si vuelven los juegos falsos". Razón: decisión explícita del usuario — con una sola fuente de datos (Supabase), mantener la distinción sería complejidad sin uso actual. Si en el futuro se reintroduce un catálogo decorativo, esa distinción se diseña de nuevo en el spec que la traiga.
 - **`getAllGames()`/`getRealGames()` no hardcodean el id `"asteroides"`**: consultan dinámicamente lo que exista en la tabla `games`. Razón: decisión explícita del usuario de que esto debe extenderse sin cambios de código cuando se implemente el siguiente juego real — un spec futuro solo necesita insertar una fila nueva.
-- **Orden visual del catálogo preservado manualmente** (ej. una lista de ids en el orden actual) al combinar `FAKE_GAMES` con los juegos reales de Supabase. Razón: sin esto, `asteroides` podría aparecer en una posición distinta a la actual simplemente por venir de una fuente de datos separada.
 - **Sin Auth real; incluso las puntuaciones reales de `asteroides` se identifican solo por nombre/iniciales.** Razón: decisión ya tomada en SPEC 04, no se reabre aquí.
-- **Sin fallback entre fuentes de datos** (un juego real nunca cae a `localStorage`, uno falso nunca intenta leer Supabase). Razón: decisión explícita del usuario, prioriza simplicidad sobre resiliencia cross-fuente.
+- **Sin fallback entre fuentes de datos.** Razón: decisión explícita del usuario, prioriza simplicidad sobre resiliencia cross-fuente.
 - **`lib/games.ts`/`lib/scores.ts` reciben el cliente de Supabase como parámetro** en vez de importarlo internamente, para reutilizar la misma lógica desde Server Components y desde componentes cliente (ej. cambio de pestaña en `/salon-de-la-fama`).
 
 ## Riesgos identificados
 
-| Riesgo                                                                                                                                                                                                                                        | Mitigación                                                                                                                                                                               |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `generateStaticParams` de `/juegos/[id]/jugar` y `/juegos/[id]` combina ids estáticos (`FAKE_GAMES`) con una consulta async a Supabase; si Supabase no es alcanzable durante el build, la parte real podría faltar.                           | Verificar que `dynamicParams` siga permitiendo renderizado dinámico como respaldo para `asteroides`; probar el build con y sin la tabla poblada.                                         |
-| Olvidar actualizar algún lugar que todavía compare `game.id === "asteroides"` directamente (en vez de `game.isReal`) al extender esta lógica a un futuro segundo juego real.                                                                  | Documentado aquí como recordatorio para el spec que implemente el siguiente juego real: revisar todos los usos de `isReal` antes de asumir que solo hay un juego real.                   |
-| Policy de `insert` abierta (`with check (true)`) en `scores` permite insertar puntuaciones arbitrarias desde el cliente para `asteroides`, igual de "falsificable" que el `localStorage` actual de los juegos falsos.                         | Aceptado como parte del alcance actual; anti-cheat queda para un spec futuro una vez haya Auth real.                                                                                     |
-| Las flags experimentales de `next.config.ts` (`cacheComponents`, `partialPrefetching`) pueden cachear agresivamente la respuesta de un Server Component que lee `scores`, mostrando una puntuación desactualizada justo después de guardarla. | Revisar `node_modules/next/dist/docs/` para el comportamiento de cacheo en Next 16 y forzar revalidación donde sea necesario (ej. `cache: "no-store"` en las consultas de puntuaciones). |
+| Riesgo                                                                                                                                                                                                                       | Mitigación                                                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `generateStaticParams` depende enteramente de una consulta async a Supabase; si Supabase no es alcanzable durante el build, no se generaría ningún param estático.                                                           | Verificar que `dynamicParams` siga permitiendo renderizado dinámico como respaldo; probar el build con y sin la tabla poblada.                                                                                                          |
+| Policy de `insert` abierta (`with check (true)`) en `scores` permite insertar puntuaciones arbitrarias desde el cliente para `asteroides`, igual de "falsificable" que el `localStorage` que usaban antes los juegos falsos. | Aceptado como parte del alcance actual; anti-cheat queda para un spec futuro una vez haya Auth real.                                                                                                                                    |
+| Las flags experimentales de `next.config.ts` (`cacheComponents`, `partialPrefetching`) bloquean el prerenderizado estático de páginas que leen `scores`/`games` en vivo mediante el cliente de Supabase con cookies.         | Resuelto durante la implementación: páginas que leen datos en vivo usan `export const instant = false`; `generateStaticParams` usa un cliente de Supabase sin cookies (`lib/supabase/static.ts`), ya que no necesita sesión de usuario. |

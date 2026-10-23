@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/app/data";
-import { saveScore as saveLocalScore } from "@/lib/storage";
-import { saveScore as saveRealScore } from "@/lib/scores";
+import { saveScore } from "@/lib/scores";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -63,17 +62,11 @@ export function GamePlayer({ game }: { game: Game }) {
   };
 
   const handleSave = async () => {
-    if (!game.isReal) {
-      saveLocalScore({ game: game.id, score, name });
-      setSaved(true);
-      return;
-    }
-
     setSaving(true);
     setSaveError(null);
     try {
       const supabase = createClient();
-      await saveRealScore(supabase, { gameId: game.id, name, score });
+      await saveScore(supabase, { gameId: game.id, name, score });
       setSaved(true);
     } catch {
       setSaveError("No se pudo guardar la puntuación. Inténtalo de nuevo.");

@@ -1,13 +1,16 @@
 import { notFound } from "next/navigation";
-import { FAKE_GAMES } from "@/app/data";
 import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
 import { getGameById, getRealGames } from "@/lib/games";
 import { GamePlayer } from "@/components/game-player";
 
+// getGameById consulta `scores` en vivo (best/plays), así que no puede
+// prerenderizarse como shell estático bajo cacheComponents.
+export const instant = false;
+
 export async function generateStaticParams() {
-  const supabase = await createClient();
-  const realGames = await getRealGames(supabase);
-  return [...FAKE_GAMES, ...realGames].map((g) => ({ id: g.id }));
+  const realGames = await getRealGames(createStaticClient());
+  return realGames.map((g) => ({ id: g.id }));
 }
 
 export default async function GamePlayerPage({

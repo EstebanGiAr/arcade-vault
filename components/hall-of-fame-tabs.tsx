@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { seededScores, type Game, type ScoreRow } from "@/app/data";
+import type { Game, ScoreRow } from "@/app/data";
 import { createClient } from "@/lib/supabase/client";
 import { getTopScores, getBestScoreByName } from "@/lib/scores";
 import { useAuth } from "@/components/auth-provider";
@@ -38,50 +38,42 @@ export function HallOfFameTabs({
     let cancelled = false;
 
     async function load() {
-      if (game.isReal) {
-        const supabase = createClient();
-        const scores = await getTopScores(supabase, game.id, 12);
-        if (cancelled) return;
-        setRows(realScoresToRows(scores));
+      const supabase = createClient();
+      const scores = await getTopScores(supabase, game.id, 12);
+      if (cancelled) return;
+      setRows(realScoresToRows(scores));
 
-        if (!user) {
-          setYouBest(null);
-          return;
-        }
-        const best = await getBestScoreByName(supabase, game.id, user.name);
-        if (cancelled) return;
-        setYouBest(
-          best
-            ? {
-                rank: 0,
-                name: best.name,
-                score: best.score,
-                date: new Date(best.createdAt).toLocaleDateString("es-ES"),
-              }
-            : null,
-        );
-      } else {
-        setRows(seededScores(tab.length * 23 + 7, 12));
+      if (!user) {
         setYouBest(null);
+        return;
       }
+      const best = await getBestScoreByName(supabase, game.id, user.name);
+      if (cancelled) return;
+      setYouBest(
+        best
+          ? {
+              rank: 0,
+              name: best.name,
+              score: best.score,
+              date: new Date(best.createdAt).toLocaleDateString("es-ES"),
+            }
+          : null,
+      );
     }
 
     load();
     return () => {
       cancelled = true;
     };
-  }, [tab, game.id, game.isReal, user]);
+  }, [tab, game.id, user]);
 
-  const youRank =
-    !game.isReal && user ? Math.floor(8 + (tab.length % 4)) : null;
-  const youScore = !game.isReal && user ? (rows[5]?.score ?? 0) - 2400 : null;
   const youBestRank = youBest
     ? rows.findIndex(
         (r) => r.name.toLowerCase() === youBest.name.toLowerCase(),
       ) + 1
     : 0;
 
-  const isEmpty = game.isReal && rows.length === 0;
+  const isEmpty = rows.length === 0;
 
   return (
     <div className="av-hall fade-in">
@@ -197,35 +189,7 @@ export function HallOfFameTabs({
                 <div className="dt">{r.date}</div>
               </div>
             ))}
-            {!game.isReal && user && (
-              <>
-                <div className="tr you-label">
-                  ▸ TU MEJOR MARCA EN {game.title}
-                </div>
-                <div
-                  className="tr you"
-                  style={{ animationDelay: `${rows.length * 50 + 50}ms` }}
-                >
-                  <div className="rk" style={{ color: "var(--yellow)" }}>
-                    #{String(youRank).padStart(2, "0")}
-                  </div>
-                  <div className="pl" style={{ color: "var(--yellow)" }}>
-                    {user.name}
-                  </div>
-                  <div
-                    className="sc"
-                    style={{
-                      color: "var(--yellow)",
-                      textShadow: "0 0 6px rgba(245,255,0,0.5)",
-                    }}
-                  >
-                    {(youScore || 9999).toLocaleString("es-ES")}
-                  </div>
-                  <div className="dt">11/05/2026</div>
-                </div>
-              </>
-            )}
-            {game.isReal && youBest && (
+            {youBest && (
               <>
                 <div className="tr you-label">
                   ▸ TU MEJOR MARCA EN {game.title}
