@@ -15,8 +15,10 @@ No hay suite de tests configurada todavía.
 - `app/page.tsx` es la página de inicio por defecto de `create-next-app`, pendiente de reemplazar por la UI real de Arcade Vault.
 - Alias de import `@/*` apunta a la raíz del proyecto (ver `tsconfig.json`).
 - `next.config.ts` tiene habilitados flags experimentales: `cacheComponents`, `partialPrefetching`, y `experimental.agentFeedback`. Next.js 16 introduce cambios de API respecto a versiones previas — si surgen dudas sobre convenciones o APIs, consultar `node_modules/next/dist/docs/` antes de asumir comportamiento de versiones anteriores (ver nota en `AGENTS.md`, que es regenerada automáticamente por `next dev`, no editar a mano).
+- Formateo automático: un hook `PostToolUse` (`.claude/settings.json` → `.claude/hooks/format-file.mjs`) corre Prettier sobre cualquier archivo formateable y `eslint --fix` sobre código JS/TS tras cada `Write`/`Edit`/`NotebookEdit`. Solo aplica en este repo.
 
 ## Skills
+
 Usa siempre /front-design para diseñar la interfaz de usuario.
 
 ## Flujo de trabajo: Spec Driven Design
