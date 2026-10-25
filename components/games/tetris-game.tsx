@@ -117,14 +117,24 @@ function rotateCW(shape: number[][]): number[][] {
 }
 
 export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
-  function TetrisGame(_props, _ref) {
+  function TetrisGame({ paused }, _ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nextCanvasRef = useRef<HTMLCanvasElement>(null);
+    const pausedRef = useRef(paused);
+    const resetTimeRef = useRef(false);
 
     const [score, setScore] = useState(0);
     const [lines, setLines] = useState(0);
     const [level, setLevel] = useState(1);
+
+    useEffect(() => {
+      if (pausedRef.current && !paused) {
+        // Al despausar, evita que el próximo frame acumule el tiempo transcurrido en pausa.
+        resetTimeRef.current = true;
+      }
+      pausedRef.current = paused;
+    }, [paused]);
 
     useEffect(() => {
       const maybeCanvas = canvasRef.current;
@@ -313,7 +323,7 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       drawNext();
 
       const onKeyDown = (e: KeyboardEvent) => {
-        if (gameOver) return;
+        if (gameOver || pausedRef.current) return;
         switch (e.code) {
           case "ArrowLeft":
             if (!collide(board, current.shape, current.x - 1, current.y))
@@ -341,11 +351,15 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       let rafId = 0;
       function loop(ts: number) {
+        if (resetTimeRef.current) {
+          lastTime = null;
+          resetTimeRef.current = false;
+        }
         if (lastTime === null) lastTime = ts;
         const dt = ts - lastTime;
         lastTime = ts;
 
-        if (!gameOver) {
+        if (!pausedRef.current && !gameOver) {
           dropAccum += dt;
           if (dropAccum >= dropInterval) {
             dropAccum = 0;
