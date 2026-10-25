@@ -7,19 +7,31 @@ import { saveScore } from "@/lib/scores";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth-provider";
 import {
-  AsteroidsGame,
-  type AsteroidsGameHandle,
-} from "@/components/games/asteroids-game";
+  GAME_REGISTRY,
+  type ArcadeGameHandle,
+  type ArcadeStats,
+  type HudStatKey,
+} from "@/components/games/registry";
+
+const HUD_LABELS: Record<HudStatKey, string> = {
+  score: "Puntuación",
+  lives: "Vidas",
+  level: "Nivel",
+  lines: "Líneas",
+};
+
+const DECORATIVE_HUD_STATS: HudStatKey[] = ["score", "lives", "level"];
+const DECORATIVE_INITIAL_STATS: ArcadeStats = { score: 0, lives: 3, level: 1 };
 
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const { user } = useAuth();
-  const isAsteroides = game.id === "asteroides";
-  const asteroidsRef = useRef<AsteroidsGameHandle>(null);
+  const entry = GAME_REGISTRY[game.id];
+  const gameRef = useRef<ArcadeGameHandle>(null);
 
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
-  const [asteroidsLevel, setAsteroidsLevel] = useState(1);
+  const [stats, setStats] = useState<ArcadeStats>(
+    entry?.initialStats ?? DECORATIVE_INITIAL_STATS,
+  );
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState(user ? user.name : "INVITADO");
@@ -27,7 +39,9 @@ export function GamePlayer({ game }: { game: Game }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const level = isAsteroides ? asteroidsLevel : Math.floor(score / 2500) + 1;
+  const score = stats.score ?? 0;
+  const level = entry ? (stats.level ?? 1) : Math.floor(score / 2500) + 1;
+  const hudStats = entry?.hudStats ?? DECORATIVE_HUD_STATS;
 
   useEffect(() => {
     // Sincroniza el nombre con la sesión (login/logout) manteniéndolo editable
@@ -37,23 +51,29 @@ export function GamePlayer({ game }: { game: Game }) {
   }, [user]);
 
   useEffect(() => {
-    if (over || paused || isAsteroides) return;
+    if (over || paused || entry) return;
     const t = setInterval(
-      () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
+      () =>
+        setStats((s) => ({
+          ...s,
+          score: (s.score ?? 0) + Math.floor(10 + Math.random() * 90),
+        })),
       220,
     );
     return () => clearInterval(t);
-  }, [over, paused, isAsteroides]);
+  }, [over, paused, entry]);
+
+  const handleStatsChange = (delta: ArcadeStats) => {
+    setStats((s) => ({ ...s, ...delta }));
+  };
 
   const endGame = () => {
-    if (isAsteroides) asteroidsRef.current?.forceGameOver();
+    if (entry) gameRef.current?.forceGameOver();
     setOver(true);
   };
   const restart = () => {
-    if (isAsteroides) asteroidsRef.current?.restart();
-    setScore(0);
-    setLives(3);
-    setAsteroidsLevel(1);
+    if (entry) gameRef.current?.restart();
+    setStats(entry?.initialStats ?? DECORATIVE_INITIAL_STATS);
     setPaused(false);
     setOver(false);
     setSaved(false);
@@ -85,18 +105,20 @@ export function GamePlayer({ game }: { game: Game }) {
               {name}
             </div>
           </div>
-          <div className="hud-stat">
-            <div className="l">Puntuación</div>
-            <div className="v">{score.toLocaleString("es-ES")}</div>
-          </div>
-          <div className="hud-stat lives">
-            <div className="l">Vidas</div>
-            <div className="v">{"♥ ".repeat(lives).trim() || "—"}</div>
-          </div>
-          <div className="hud-stat level">
-            <div className="l">Nivel</div>
-            <div className="v">{String(level).padStart(2, "0")}</div>
-          </div>
+          {hudStats.map((key) => (
+            <div key={key} className={`hud-stat ${key}`}>
+              <div className="l">{HUD_LABELS[key]}</div>
+              <div className="v">
+                {key === "lives"
+                  ? "♥ ".repeat(stats.lives ?? 0).trim() || "—"
+                  : key === "level"
+                    ? String(level).padStart(2, "0")
+                    : key === "score"
+                      ? score.toLocaleString("es-ES")
+                      : (stats[key] ?? 0).toLocaleString("es-ES")}
+              </div>
+            </div>
+          ))}
         </div>
         <div className="hud-actions">
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
@@ -115,14 +137,24 @@ export function GamePlayer({ game }: { game: Game }) {
       </div>
 
       <div className="crt">
-        <div className="crt-screen">
-          {isAsteroides ? (
-            <AsteroidsGame
-              ref={asteroidsRef}
+        <div
+          className="crt-screen"
+          style={
+            entry?.aspectRatio
+              ? {
+                  aspectRatio: entry.aspectRatio,
+                  height: "min(70dvh, 760px)",
+                  width: "fit-content",
+                  margin: "0 auto",
+                }
+              : undefined
+          }
+        >
+          {entry ? (
+            <entry.component
+              ref={gameRef}
               paused={paused}
-              onScoreChange={setScore}
-              onLivesChange={setLives}
-              onLevelChange={setAsteroidsLevel}
+              onStatsChange={handleStatsChange}
               onGameOver={endGame}
             />
           ) : (
