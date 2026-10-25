@@ -1,6 +1,7 @@
 import type { ComponentType, RefAttributes } from "react";
 
 import { AsteroidsGame } from "@/components/games/asteroids-game";
+import { TetrisGame } from "@/components/games/tetris-game";
 
 export type HudStatKey = "score" | "lives" | "level" | "lines";
 export type ArcadeStats = Partial<Record<HudStatKey, number>>;
@@ -28,5 +29,11 @@ export const GAME_REGISTRY: Record<string, ArcadeGameEntry> = {
     component: AsteroidsGame,
     hudStats: ["score", "lives", "level"],
     initialStats: { score: 0, lives: 3, level: 1 },
+  },
+  tetris: {
+    component: TetrisGame,
+    hudStats: ["score", "lines", "level"],
+    initialStats: { score: 0, lines: 0, level: 1 },
+    aspectRatio: "1 / 2",
   },
 };
