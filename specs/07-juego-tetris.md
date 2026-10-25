@@ -1,6 +1,6 @@
 # 07 — Juego real de Tetris (nueva entrada "tetris") + registro de juegos
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 05, SPEC 06
 **Fecha:** 2026-10-25
 
@@ -122,25 +122,25 @@ Cada paso deja el proyecto en estado funcional (`npm run dev` arranca sin errore
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] `mcp__supabase__execute_sql` (`select id from games`) muestra `asteroides` y `tetris`.
-- [ ] `/juegos` muestra la nueva tarjeta "TETRIS" con la portada `.cover-tetro`.
-- [ ] En `/juegos/tetris` (sin partidas aún), "Mejor global" y "Partidas" muestran `0`.
-- [ ] En `/juegos/tetris/jugar` se ve y juega el Tetris real (tablero, piezas, rotación con wall kicks, pieza ghost, panel "NEXT"), no la UI decorativa falsa.
-- [ ] El panel interno del juego (`SCORE`/`LINES`/`LEVEL`), renderizado como HTML dentro del propio componente de Tetris, se ve tal como en el original (sin la lista de `CONTROLS`).
-- [ ] El HUD externo de React muestra exactamente tres tiles para tetris: Puntuación, Líneas, Nivel (sin tile de Vidas), con los mismos valores que el panel interno del juego en todo momento.
-- [ ] Despejar una línea incrementa "Líneas" y "Puntuación" según `LINE_SCORES[cleared] * nivel` en ambos HUDs (interno y externo) simultáneamente; cada 10 líneas sube el nivel y acelera la caída.
-- [ ] Pulsar "PAUSA" congela completamente el tablero (ninguna pieza cae ni responde a input); "REANUDAR" continúa sin saltos de velocidad de caída.
-- [ ] Pulsar "FIN" en cualquier momento detiene el tablero y muestra el modal "FIN DEL JUEGO" de React con la puntuación actual.
-- [ ] Apilar piezas hasta que la nueva pieza no pueda aparecer dispara el mismo flujo: tablero detenido + modal de React con la puntuación final.
-- [ ] Guardar la puntuación desde el modal inserta una fila real en `scores` con `game_id: "tetris"`.
-- [ ] "JUGAR DE NUEVO" reinicia completamente el tablero (vacío, pieza nueva, score/líneas/nivel en 0/0/1) sin desmontar el componente del canvas.
-- [ ] Redimensionar la ventana mantiene el tablero en proporción 1:2 dentro de `.crt-screen`, sin recortar ni deformar.
-- [ ] `read_console_messages` no muestra errores durante una partida completa de tetris.
-- [ ] `/salon-de-la-fama` muestra una pestaña "TETRIS" junto a la de "ASTEROIDES", y tras guardar una puntuación esa pestaña refleja la fila real.
-- [ ] `/juegos/asteroides/jugar` sigue funcionando exactamente igual que antes de este spec (mismo HUD de 3 tiles con Vidas, misma pausa, mismo fin de juego) tras la introducción del registro.
-- [ ] No queda ninguna referencia a `AsteroidsGameProps`/`AsteroidsGameHandle` con los callbacks viejos (`onScoreChange`/`onLivesChange`/`onLevelChange`) en el código — todo pasa por `ArcadeGameProps`/`ArcadeGameHandle` del registro.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] `mcp__supabase__execute_sql` (`select id from games`) muestra `asteroides` y `tetris`.
+- [x] `/juegos` muestra la nueva tarjeta "TETRIS" con la portada `.cover-tetro`.
+- [x] En `/juegos/tetris` (sin partidas aún), "Mejor global" y "Partidas" muestran `0`.
+- [x] En `/juegos/tetris/jugar` se ve y juega el Tetris real (tablero, piezas, rotación con wall kicks, pieza ghost, panel "NEXT"), no la UI decorativa falsa.
+- [x] El panel interno del juego (`SCORE`/`LINES`/`LEVEL`), renderizado como HTML dentro del propio componente de Tetris, se ve tal como en el original (sin la lista de `CONTROLS`).
+- [x] El HUD externo de React muestra exactamente tres tiles para tetris: Puntuación, Líneas, Nivel (sin tile de Vidas), con los mismos valores que el panel interno del juego en todo momento.
+- [x] Despejar una línea incrementa "Líneas" y "Puntuación" según `LINE_SCORES[cleared] * nivel` en ambos HUDs (interno y externo) simultáneamente; cada 10 líneas sube el nivel y acelera la caída.
+- [x] Pulsar "PAUSA" congela completamente el tablero (ninguna pieza cae ni responde a input); "REANUDAR" continúa sin saltos de velocidad de caída.
+- [x] Pulsar "FIN" en cualquier momento detiene el tablero y muestra el modal "FIN DEL JUEGO" de React con la puntuación actual.
+- [x] Apilar piezas hasta que la nueva pieza no pueda aparecer dispara el mismo flujo: tablero detenido + modal de React con la puntuación final.
+- [x] Guardar la puntuación desde el modal inserta una fila real en `scores` con `game_id: "tetris"`.
+- [x] "JUGAR DE NUEVO" reinicia completamente el tablero (vacío, pieza nueva, score/líneas/nivel en 0/0/1) sin desmontar el componente del canvas.
+- [x] Redimensionar la ventana mantiene el tablero en proporción 1:2 dentro de `.crt-screen`, sin recortar ni deformar.
+- [x] `read_console_messages` no muestra errores durante una partida completa de tetris.
+- [x] `/salon-de-la-fama` muestra una pestaña "TETRIS" junto a la de "ASTEROIDES", y tras guardar una puntuación esa pestaña refleja la fila real.
+- [x] `/juegos/asteroides/jugar` sigue funcionando exactamente igual que antes de este spec (mismo HUD de 3 tiles con Vidas, misma pausa, mismo fin de juego) tras la introducción del registro.
+- [x] No queda ninguna referencia a `AsteroidsGameProps`/`AsteroidsGameHandle` con los callbacks viejos (`onScoreChange`/`onLivesChange`/`onLevelChange`) en el código — todo pasa por `ArcadeGameProps`/`ArcadeGameHandle` del registro.
 
 ## Decisiones tomadas y descartadas
 

@@ -140,7 +140,14 @@ export function GamePlayer({ game }: { game: Game }) {
         <div
           className="crt-screen"
           style={
-            entry?.aspectRatio ? { aspectRatio: entry.aspectRatio } : undefined
+            entry?.aspectRatio
+              ? {
+                  aspectRatio: entry.aspectRatio,
+                  height: "min(70dvh, 760px)",
+                  width: "fit-content",
+                  margin: "0 auto",
+                }
+              : undefined
           }
         >
           {entry ? (

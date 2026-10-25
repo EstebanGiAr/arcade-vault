@@ -139,6 +139,7 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
     const [score, setScore] = useState(0);
     const [lines, setLines] = useState(0);
     const [level, setLevel] = useState(1);
+    const [panelScale, setPanelScale] = useState(1);
 
     useImperativeHandle(
       ref,
@@ -177,6 +178,7 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       let pixelWidth = 0;
       let pixelHeight = 0;
+      let lastPanelScale = 1;
       function resizeCanvasToContainer() {
         const dpr = window.devicePixelRatio || 1;
         const rect = container.getBoundingClientRect();
@@ -187,6 +189,19 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           pixelHeight = newHeight;
           canvas.width = newWidth;
           canvas.height = newHeight;
+        }
+
+        // Encoge el panel superpuesto (texto + "NEXT") en proporción al ancho
+        // real del tablero, para que no tape las piezas cuando el contenedor
+        // es angosto (p. ej. al limitar la altura para que quepa sin scroll).
+        const REFERENCE_WIDTH = 1004;
+        const nextScale = Math.min(
+          1,
+          Math.max(0.35, rect.width / REFERENCE_WIDTH),
+        );
+        if (Math.abs(nextScale - lastPanelScale) > 0.01) {
+          lastPanelScale = nextScale;
+          setPanelScale(nextScale);
         }
       }
       resizeCanvasToContainer();
@@ -412,7 +427,16 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       drawNext();
 
+      const GAME_KEYS = new Set([
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowDown",
+        "ArrowUp",
+        "Space",
+      ]);
+
       const onKeyDown = (e: KeyboardEvent) => {
+        if (GAME_KEYS.has(e.code)) e.preventDefault();
         if (gameOver || pausedRef.current) return;
         switch (e.code) {
           case "ArrowLeft":
@@ -431,7 +455,6 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
             tryRotate();
             break;
           case "Space":
-            e.preventDefault();
             hardDrop();
             break;
         }
@@ -480,18 +503,19 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
     }, []);
 
     const labelStyle = {
-      fontSize: 10,
+      fontSize: Math.max(7, 10 * panelScale),
       letterSpacing: "2px",
       color: "#555570",
       fontWeight: 600,
     } as const;
     const valueStyle = {
       fontFamily: "monospace",
-      fontSize: 22,
+      fontSize: Math.max(11, 22 * panelScale),
       fontWeight: 700,
       color: "#7aa2f7",
       letterSpacing: "1px",
     } as const;
+    const nextDisplaySize = Math.max(40, 120 * panelScale);
 
     return (
       <div
@@ -505,11 +529,11 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         <div
           style={{
             position: "absolute",
-            top: 10,
-            right: 10,
+            top: 10 * panelScale,
+            right: 10 * panelScale,
             display: "flex",
             flexDirection: "column",
-            gap: 14,
+            gap: 14 * panelScale,
             pointerEvents: "none",
           }}
         >
@@ -533,6 +557,8 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
               height={120}
               style={{
                 display: "block",
+                width: nextDisplaySize,
+                height: nextDisplaySize,
                 background: "rgba(0,0,0,0.4)",
                 border: "1px solid #2a2a3a",
                 borderRadius: 4,
