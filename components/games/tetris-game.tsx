@@ -5,6 +5,7 @@ import { forwardRef, useEffect, useRef, useState } from "react";
 import type {
   ArcadeGameHandle,
   ArcadeGameProps,
+  ArcadeStats,
 } from "@/components/games/registry";
 
 const COLS = 10;
@@ -117,12 +118,13 @@ function rotateCW(shape: number[][]): number[][] {
 }
 
 export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
-  function TetrisGame({ paused }, _ref) {
+  function TetrisGame({ paused, onStatsChange, onGameOver }, _ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nextCanvasRef = useRef<HTMLCanvasElement>(null);
     const pausedRef = useRef(paused);
     const resetTimeRef = useRef(false);
+    const callbacksRef = useRef({ onStatsChange, onGameOver });
 
     const [score, setScore] = useState(0);
     const [lines, setLines] = useState(0);
@@ -135,6 +137,10 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       }
       pausedRef.current = paused;
     }, [paused]);
+
+    useEffect(() => {
+      callbacksRef.current = { onStatsChange, onGameOver };
+    }, [onStatsChange, onGameOver]);
 
     useEffect(() => {
       const maybeCanvas = canvasRef.current;
@@ -158,11 +164,35 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       let dropAccum = 0;
       let lastTime: number | null = null;
       let gameOver = false;
+      let prevScore = scoreValue;
+      let prevLines = linesValue;
+      let prevLevel = levelValue;
+      let prevGameOver = gameOver;
 
-      function updatePanel() {
-        setScore(scoreValue);
-        setLines(linesValue);
-        setLevel(levelValue);
+      function reportChanges() {
+        const statsDelta: ArcadeStats = {};
+        if (scoreValue !== prevScore) {
+          prevScore = scoreValue;
+          statsDelta.score = scoreValue;
+        }
+        if (linesValue !== prevLines) {
+          prevLines = linesValue;
+          statsDelta.lines = linesValue;
+        }
+        if (levelValue !== prevLevel) {
+          prevLevel = levelValue;
+          statsDelta.level = levelValue;
+        }
+        if (Object.keys(statsDelta).length > 0) {
+          setScore(scoreValue);
+          setLines(linesValue);
+          setLevel(levelValue);
+          callbacksRef.current.onStatsChange(statsDelta);
+        }
+        if (gameOver && !prevGameOver) {
+          callbacksRef.current.onGameOver(scoreValue);
+        }
+        prevGameOver = gameOver;
       }
 
       function merge() {
@@ -187,7 +217,6 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           scoreValue += (LINE_SCORES[cleared] || 0) * levelValue;
           levelValue = Math.floor(linesValue / 10) + 1;
           dropInterval = Math.max(100, 1000 - (levelValue - 1) * 90);
-          updatePanel();
         }
       }
 
@@ -229,7 +258,6 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         if (!collide(board, current.shape, current.x, current.y + 1)) {
           current.y++;
           scoreValue += 1;
-          updatePanel();
         } else {
           lockPiece();
         }
@@ -345,7 +373,6 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
             hardDrop();
             break;
         }
-        updatePanel();
       };
       window.addEventListener("keydown", onKeyDown);
 
@@ -371,6 +398,7 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           }
         }
 
+        reportChanges();
         draw();
         rafId = requestAnimationFrame(loop);
       }
