@@ -1,6 +1,12 @@
 "use client";
 
-import { forwardRef, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 
 import type {
   ArcadeGameHandle,
@@ -118,17 +124,30 @@ function rotateCW(shape: number[][]): number[][] {
 }
 
 export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
-  function TetrisGame({ paused, onStatsChange, onGameOver }, _ref) {
+  function TetrisGame({ paused, onStatsChange, onGameOver }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nextCanvasRef = useRef<HTMLCanvasElement>(null);
     const pausedRef = useRef(paused);
     const resetTimeRef = useRef(false);
     const callbacksRef = useRef({ onStatsChange, onGameOver });
+    const actionsRef = useRef<ArcadeGameHandle>({
+      restart: () => {},
+      forceGameOver: () => {},
+    });
 
     const [score, setScore] = useState(0);
     const [lines, setLines] = useState(0);
     const [level, setLevel] = useState(1);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        restart: () => actionsRef.current.restart(),
+        forceGameOver: () => actionsRef.current.forceGameOver(),
+      }),
+      [],
+    );
 
     useEffect(() => {
       if (pausedRef.current && !paused) {
@@ -193,6 +212,26 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           callbacksRef.current.onGameOver(scoreValue);
         }
         prevGameOver = gameOver;
+      }
+
+      function initGame() {
+        board.splice(0, board.length, ...createBoard());
+        current = randomPiece();
+        next = randomPiece();
+        scoreValue = 0;
+        linesValue = 0;
+        levelValue = 1;
+        dropInterval = 1000;
+        dropAccum = 0;
+        gameOver = false;
+        prevScore = scoreValue;
+        prevLines = linesValue;
+        prevLevel = levelValue;
+        prevGameOver = gameOver;
+        setScore(scoreValue);
+        setLines(linesValue);
+        setLevel(levelValue);
+        drawNext();
       }
 
       function merge() {
@@ -402,6 +441,12 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         draw();
         rafId = requestAnimationFrame(loop);
       }
+
+      actionsRef.current.restart = initGame;
+      actionsRef.current.forceGameOver = () => {
+        gameOver = true;
+      };
+
       rafId = requestAnimationFrame(loop);
 
       return () => {
