@@ -162,9 +162,11 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
     }, [onStatsChange, onGameOver]);
 
     useEffect(() => {
+      const maybeContainer = containerRef.current;
       const maybeCanvas = canvasRef.current;
       const maybeNextCanvas = nextCanvasRef.current;
-      if (!maybeCanvas || !maybeNextCanvas) return;
+      if (!maybeContainer || !maybeCanvas || !maybeNextCanvas) return;
+      const container: HTMLDivElement = maybeContainer;
       const canvas: HTMLCanvasElement = maybeCanvas;
       const nextCanvas: HTMLCanvasElement = maybeNextCanvas;
       const maybeCtx = canvas.getContext("2d");
@@ -172,6 +174,24 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       if (!maybeCtx || !maybeNextCtx) return;
       const ctx: CanvasRenderingContext2D = maybeCtx;
       const nextCtx: CanvasRenderingContext2D = maybeNextCtx;
+
+      let pixelWidth = 0;
+      let pixelHeight = 0;
+      function resizeCanvasToContainer() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = container.getBoundingClientRect();
+        const newWidth = Math.max(1, Math.round(rect.width * dpr));
+        const newHeight = Math.max(1, Math.round(rect.height * dpr));
+        if (newWidth !== pixelWidth || newHeight !== pixelHeight) {
+          pixelWidth = newWidth;
+          pixelHeight = newHeight;
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+        }
+      }
+      resizeCanvasToContainer();
+      const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
+      resizeObserver.observe(container);
 
       const board: Board = createBoard();
       let current: Piece = randomPiece();
@@ -345,7 +365,10 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       }
 
       function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const scaleX = canvas.width / (COLS * BLOCK);
+        const scaleY = canvas.height / (ROWS * BLOCK);
+        ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+        ctx.clearRect(0, 0, COLS * BLOCK, ROWS * BLOCK);
         drawGrid();
 
         for (let r = 0; r < ROWS; r++)
@@ -451,6 +474,7 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       return () => {
         cancelAnimationFrame(rafId);
+        resizeObserver.disconnect();
         window.removeEventListener("keydown", onKeyDown);
       };
     }, []);
@@ -474,7 +498,10 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ref={containerRef}
         style={{ position: "relative", width: "100%", height: "100%" }}
       >
-        <canvas ref={canvasRef} width={COLS * BLOCK} height={ROWS * BLOCK} />
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%", display: "block" }}
+        />
         <div
           style={{
             position: "absolute",
