@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useRef } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 
 import type {
   ArcadeGameHandle,
@@ -122,6 +122,10 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nextCanvasRef = useRef<HTMLCanvasElement>(null);
 
+    const [score, setScore] = useState(0);
+    const [lines, setLines] = useState(0);
+    const [level, setLevel] = useState(1);
+
     useEffect(() => {
       const maybeCanvas = canvasRef.current;
       const maybeNextCanvas = nextCanvasRef.current;
@@ -135,8 +139,62 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       const nextCtx: CanvasRenderingContext2D = maybeNextCtx;
 
       const board: Board = createBoard();
-      const current: Piece = randomPiece();
-      const next: Piece = randomPiece();
+      let current: Piece = randomPiece();
+      let next: Piece = randomPiece();
+      let scoreValue = 0;
+      let linesValue = 0;
+      let levelValue = 1;
+      let dropInterval = 1000;
+      let dropAccum = 0;
+      let lastTime: number | null = null;
+      let gameOver = false;
+
+      function updatePanel() {
+        setScore(scoreValue);
+        setLines(linesValue);
+        setLevel(levelValue);
+      }
+
+      function merge() {
+        for (let r = 0; r < current.shape.length; r++)
+          for (let c = 0; c < current.shape[r].length; c++)
+            if (current.shape[r][c])
+              board[current.y + r][current.x + c] = current.shape[r][c];
+      }
+
+      function clearLines() {
+        let cleared = 0;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (board[r].every((v) => v !== 0)) {
+            board.splice(r, 1);
+            board.unshift(new Array(COLS).fill(0));
+            cleared++;
+            r++;
+          }
+        }
+        if (cleared) {
+          linesValue += cleared;
+          scoreValue += (LINE_SCORES[cleared] || 0) * levelValue;
+          levelValue = Math.floor(linesValue / 10) + 1;
+          dropInterval = Math.max(100, 1000 - (levelValue - 1) * 90);
+          updatePanel();
+        }
+      }
+
+      function spawn() {
+        current = next;
+        next = randomPiece();
+        if (collide(board, current.shape, current.x, current.y)) {
+          gameOver = true;
+        }
+        drawNext();
+      }
+
+      function lockPiece() {
+        merge();
+        clearLines();
+        spawn();
+      }
 
       function drawBlock(
         context: CanvasRenderingContext2D,
@@ -226,7 +284,23 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       drawNext();
 
       let rafId = 0;
-      function loop() {
+      function loop(ts: number) {
+        if (lastTime === null) lastTime = ts;
+        const dt = ts - lastTime;
+        lastTime = ts;
+
+        if (!gameOver) {
+          dropAccum += dt;
+          if (dropAccum >= dropInterval) {
+            dropAccum = 0;
+            if (!collide(board, current.shape, current.x, current.y + 1)) {
+              current.y++;
+            } else {
+              lockPiece();
+            }
+          }
+        }
+
         draw();
         rafId = requestAnimationFrame(loop);
       }
@@ -237,13 +311,64 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       };
     }, []);
 
+    const labelStyle = {
+      fontSize: 10,
+      letterSpacing: "2px",
+      color: "#555570",
+      fontWeight: 600,
+    } as const;
+    const valueStyle = {
+      fontFamily: "monospace",
+      fontSize: 22,
+      fontWeight: 700,
+      color: "#7aa2f7",
+      letterSpacing: "1px",
+    } as const;
+
     return (
       <div
         ref={containerRef}
         style={{ position: "relative", width: "100%", height: "100%" }}
       >
         <canvas ref={canvasRef} width={COLS * BLOCK} height={ROWS * BLOCK} />
-        <canvas ref={nextCanvasRef} width={120} height={120} />
+        <div
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+            pointerEvents: "none",
+          }}
+        >
+          <div>
+            <div style={labelStyle}>SCORE</div>
+            <div style={valueStyle}>{score.toLocaleString()}</div>
+          </div>
+          <div>
+            <div style={labelStyle}>LINES</div>
+            <div style={valueStyle}>{lines}</div>
+          </div>
+          <div>
+            <div style={labelStyle}>LEVEL</div>
+            <div style={valueStyle}>{level}</div>
+          </div>
+          <div>
+            <div style={labelStyle}>NEXT</div>
+            <canvas
+              ref={nextCanvasRef}
+              width={120}
+              height={120}
+              style={{
+                display: "block",
+                background: "rgba(0,0,0,0.4)",
+                border: "1px solid #2a2a3a",
+                borderRadius: 4,
+              }}
+            />
+          </div>
+        </div>
       </div>
     );
   },
