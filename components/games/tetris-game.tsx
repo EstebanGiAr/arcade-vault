@@ -196,6 +196,35 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         spawn();
       }
 
+      function tryRotate() {
+        const rotated = rotateCW(current.shape);
+        const kicks = [0, -1, 1, -2, 2];
+        for (const kick of kicks) {
+          if (!collide(board, rotated, current.x + kick, current.y)) {
+            current.shape = rotated;
+            current.x += kick;
+            return;
+          }
+        }
+      }
+
+      function hardDrop() {
+        const gy = ghostY();
+        scoreValue += (gy - current.y) * 2;
+        current.y = gy;
+        lockPiece();
+      }
+
+      function softDrop() {
+        if (!collide(board, current.shape, current.x, current.y + 1)) {
+          current.y++;
+          scoreValue += 1;
+          updatePanel();
+        } else {
+          lockPiece();
+        }
+      }
+
       function drawBlock(
         context: CanvasRenderingContext2D,
         x: number,
@@ -283,6 +312,33 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       drawNext();
 
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (gameOver) return;
+        switch (e.code) {
+          case "ArrowLeft":
+            if (!collide(board, current.shape, current.x - 1, current.y))
+              current.x--;
+            break;
+          case "ArrowRight":
+            if (!collide(board, current.shape, current.x + 1, current.y))
+              current.x++;
+            break;
+          case "ArrowDown":
+            softDrop();
+            break;
+          case "ArrowUp":
+          case "KeyX":
+            tryRotate();
+            break;
+          case "Space":
+            e.preventDefault();
+            hardDrop();
+            break;
+        }
+        updatePanel();
+      };
+      window.addEventListener("keydown", onKeyDown);
+
       let rafId = 0;
       function loop(ts: number) {
         if (lastTime === null) lastTime = ts;
@@ -308,6 +364,7 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       return () => {
         cancelAnimationFrame(rafId);
+        window.removeEventListener("keydown", onKeyDown);
       };
     }, []);
 
