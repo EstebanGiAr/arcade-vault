@@ -2,6 +2,12 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
+import type {
+  ArcadeGameHandle,
+  ArcadeGameProps,
+  ArcadeStats,
+} from "@/components/games/registry";
+
 const W = 800;
 const H = 600;
 
@@ -302,395 +308,384 @@ class Particle {
 
 type GameState = "playing" | "dead" | "gameover";
 
-export type AsteroidsGameHandle = {
-  restart: () => void;
-  forceGameOver: () => void;
-};
-
-export type AsteroidsGameProps = {
-  paused: boolean;
-  onScoreChange: (score: number) => void;
-  onLivesChange: (lives: number) => void;
-  onLevelChange: (level: number) => void;
-  onGameOver: (finalScore: number) => void;
-};
-
-export const AsteroidsGame = forwardRef<
-  AsteroidsGameHandle,
-  AsteroidsGameProps
->(function AsteroidsGame(
-  { paused, onScoreChange, onLivesChange, onLevelChange, onGameOver },
-  ref,
-) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pausedRef = useRef(paused);
-  const resetTimeRef = useRef(false);
-  const callbacksRef = useRef({
-    onScoreChange,
-    onLivesChange,
-    onLevelChange,
-    onGameOver,
-  });
-  const actionsRef = useRef<AsteroidsGameHandle>({
-    restart: () => {},
-    forceGameOver: () => {},
-  });
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      restart: () => actionsRef.current.restart(),
-      forceGameOver: () => actionsRef.current.forceGameOver(),
-    }),
-    [],
-  );
-
-  useEffect(() => {
-    if (pausedRef.current && !paused) {
-      // Al despausar, evita que el próximo frame acumule el tiempo transcurrido en pausa.
-      resetTimeRef.current = true;
-    }
-    pausedRef.current = paused;
-  }, [paused]);
-
-  useEffect(() => {
-    callbacksRef.current = {
-      onScoreChange,
-      onLivesChange,
-      onLevelChange,
+export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
+  function AsteroidsGame({ paused, onStatsChange, onGameOver }, ref) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const pausedRef = useRef(paused);
+    const resetTimeRef = useRef(false);
+    const callbacksRef = useRef({
+      onStatsChange,
       onGameOver,
-    };
-  }, [onScoreChange, onLivesChange, onLevelChange, onGameOver]);
+    });
+    const actionsRef = useRef<ArcadeGameHandle>({
+      restart: () => {},
+      forceGameOver: () => {},
+    });
 
-  useEffect(() => {
-    const maybeContainer = containerRef.current;
-    const maybeCanvas = canvasRef.current;
-    if (!maybeContainer || !maybeCanvas) return;
-    const container: HTMLDivElement = maybeContainer;
-    const canvas: HTMLCanvasElement = maybeCanvas;
-    const maybeCtx = canvas.getContext("2d");
-    if (!maybeCtx) return;
-    const ctx: CanvasRenderingContext2D = maybeCtx;
+    useImperativeHandle(
+      ref,
+      () => ({
+        restart: () => actionsRef.current.restart(),
+        forceGameOver: () => actionsRef.current.forceGameOver(),
+      }),
+      [],
+    );
 
-    let pixelWidth = 0;
-    let pixelHeight = 0;
-    function resizeCanvasToContainer() {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = container.getBoundingClientRect();
-      const newWidth = Math.max(1, Math.round(rect.width * dpr));
-      const newHeight = Math.max(1, Math.round(rect.height * dpr));
-      if (newWidth !== pixelWidth || newHeight !== pixelHeight) {
-        pixelWidth = newWidth;
-        pixelHeight = newHeight;
-        canvas.width = newWidth;
-        canvas.height = newHeight;
+    useEffect(() => {
+      if (pausedRef.current && !paused) {
+        // Al despausar, evita que el próximo frame acumule el tiempo transcurrido en pausa.
+        resetTimeRef.current = true;
       }
-    }
-    resizeCanvasToContainer();
-    const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
-    resizeObserver.observe(container);
+      pausedRef.current = paused;
+    }, [paused]);
 
-    const keys: Record<string, boolean> = {};
-    const justPressed: Record<string, boolean> = {};
+    useEffect(() => {
+      callbacksRef.current = {
+        onStatsChange,
+        onGameOver,
+      };
+    }, [onStatsChange, onGameOver]);
 
-    function pressed(code: string) {
-      const val = justPressed[code];
-      justPressed[code] = false;
-      return val;
-    }
+    useEffect(() => {
+      const maybeContainer = containerRef.current;
+      const maybeCanvas = canvasRef.current;
+      if (!maybeContainer || !maybeCanvas) return;
+      const container: HTMLDivElement = maybeContainer;
+      const canvas: HTMLCanvasElement = maybeCanvas;
+      const maybeCtx = canvas.getContext("2d");
+      if (!maybeCtx) return;
+      const ctx: CanvasRenderingContext2D = maybeCtx;
 
-    const GAME_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "Space"]);
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (GAME_KEYS.has(e.code)) e.preventDefault();
-      if (!keys[e.code]) justPressed[e.code] = true;
-      keys[e.code] = true;
-    };
-    const onKeyUp = (e: KeyboardEvent) => {
-      keys[e.code] = false;
-    };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-
-    let ship = new Ship();
-    let bullets: Bullet[] = [];
-    let asteroids: Asteroid[] = [];
-    let particles: Particle[] = [];
-    let powerUps: PowerUp[] = [];
-    let score = 0;
-    let lives = 3;
-    let level = 1;
-    let state: GameState = "playing";
-    let deadTimer = 0;
-    let powerUpSpawned = false;
-    let prevScore = score;
-    let prevLives = lives;
-    let prevLevel = level;
-    let prevState: GameState = state;
-    let killsSinceSpawn = 0;
-
-    function spawnAsteroids(count: number) {
-      const SAFE_DIST = 130;
-      for (let i = 0; i < count; i++) {
-        let x: number;
-        let y: number;
-        do {
-          x = rand(0, W);
-          y = rand(0, H);
-        } while (Math.hypot(x - W / 2, y - H / 2) < SAFE_DIST);
-        asteroids.push(new Asteroid(x, y, 3));
+      let pixelWidth = 0;
+      let pixelHeight = 0;
+      function resizeCanvasToContainer() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = container.getBoundingClientRect();
+        const newWidth = Math.max(1, Math.round(rect.width * dpr));
+        const newHeight = Math.max(1, Math.round(rect.height * dpr));
+        if (newWidth !== pixelWidth || newHeight !== pixelHeight) {
+          pixelWidth = newWidth;
+          pixelHeight = newHeight;
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+        }
       }
-    }
+      resizeCanvasToContainer();
+      const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
+      resizeObserver.observe(container);
 
-    function initGame() {
-      ship = new Ship();
-      bullets = [];
-      asteroids = [];
-      particles = [];
-      powerUps = [];
-      powerUpSpawned = false;
-      killsSinceSpawn = 0;
-      score = 0;
-      lives = 3;
-      level = 1;
-      state = "playing";
-      spawnAsteroids(4);
-    }
+      const keys: Record<string, boolean> = {};
+      const justPressed: Record<string, boolean> = {};
 
-    function nextLevel() {
-      level++;
-      bullets = [];
-      particles = [];
-      powerUps = [];
-      powerUpSpawned = false;
-      killsSinceSpawn = 0;
-      ship.reset();
-      spawnAsteroids(3 + level);
-    }
-
-    function explode(x: number, y: number, count = 8) {
-      for (let i = 0; i < count; i++) particles.push(new Particle(x, y));
-    }
-
-    function killShip() {
-      explode(ship.x, ship.y, 14);
-      ship.dead = true;
-      lives--;
-      if (lives <= 0) {
-        state = "gameover";
-      } else {
-        state = "dead";
-        deadTimer = 2;
-      }
-    }
-
-    function update(dt: number) {
-      if (state === "gameover") {
-        // El reinicio solo ocurre vía restart() invocado desde React, para evitar reinicios duplicados.
-        particles.forEach((p) => p.update(dt));
-        particles = particles.filter((p) => !p.dead);
-        return;
+      function pressed(code: string) {
+        const val = justPressed[code];
+        justPressed[code] = false;
+        return val;
       }
 
-      if (state === "dead") {
-        deadTimer -= dt;
-        particles.forEach((p) => p.update(dt));
-        particles = particles.filter((p) => !p.dead);
+      const GAME_KEYS = new Set([
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "Space",
+      ]);
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (GAME_KEYS.has(e.code)) e.preventDefault();
+        if (!keys[e.code]) justPressed[e.code] = true;
+        keys[e.code] = true;
+      };
+      const onKeyUp = (e: KeyboardEvent) => {
+        keys[e.code] = false;
+      };
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+
+      let ship = new Ship();
+      let bullets: Bullet[] = [];
+      let asteroids: Asteroid[] = [];
+      let particles: Particle[] = [];
+      let powerUps: PowerUp[] = [];
+      let score = 0;
+      let lives = 3;
+      let level = 1;
+      let state: GameState = "playing";
+      let deadTimer = 0;
+      let powerUpSpawned = false;
+      let prevScore = score;
+      let prevLives = lives;
+      let prevLevel = level;
+      let prevState: GameState = state;
+      let killsSinceSpawn = 0;
+
+      function spawnAsteroids(count: number) {
+        const SAFE_DIST = 130;
+        for (let i = 0; i < count; i++) {
+          let x: number;
+          let y: number;
+          do {
+            x = rand(0, W);
+            y = rand(0, H);
+          } while (Math.hypot(x - W / 2, y - H / 2) < SAFE_DIST);
+          asteroids.push(new Asteroid(x, y, 3));
+        }
+      }
+
+      function initGame() {
+        ship = new Ship();
+        bullets = [];
+        asteroids = [];
+        particles = [];
+        powerUps = [];
+        powerUpSpawned = false;
+        killsSinceSpawn = 0;
+        score = 0;
+        lives = 3;
+        level = 1;
+        state = "playing";
+        spawnAsteroids(4);
+      }
+
+      function nextLevel() {
+        level++;
+        bullets = [];
+        particles = [];
+        powerUps = [];
+        powerUpSpawned = false;
+        killsSinceSpawn = 0;
+        ship.reset();
+        spawnAsteroids(3 + level);
+      }
+
+      function explode(x: number, y: number, count = 8) {
+        for (let i = 0; i < count; i++) particles.push(new Particle(x, y));
+      }
+
+      function killShip() {
+        explode(ship.x, ship.y, 14);
+        ship.dead = true;
+        lives--;
+        if (lives <= 0) {
+          state = "gameover";
+        } else {
+          state = "dead";
+          deadTimer = 2;
+        }
+      }
+
+      function update(dt: number) {
+        if (state === "gameover") {
+          // El reinicio solo ocurre vía restart() invocado desde React, para evitar reinicios duplicados.
+          particles.forEach((p) => p.update(dt));
+          particles = particles.filter((p) => !p.dead);
+          return;
+        }
+
+        if (state === "dead") {
+          deadTimer -= dt;
+          particles.forEach((p) => p.update(dt));
+          particles = particles.filter((p) => !p.dead);
+          asteroids.forEach((a) => a.update(dt));
+          if (deadTimer <= 0) {
+            state = "playing";
+            ship.reset();
+          }
+          return;
+        }
+
+        if (pressed("Space")) {
+          bullets.push(...ship.tryShoot());
+        }
+
+        ship.update(dt, keys);
+        bullets.forEach((b) => b.update(dt));
         asteroids.forEach((a) => a.update(dt));
-        if (deadTimer <= 0) {
-          state = "playing";
-          ship.reset();
+        particles.forEach((p) => p.update(dt));
+        powerUps.forEach((p) => p.update(dt));
+
+        bullets = bullets.filter((b) => !b.dead);
+        particles = particles.filter((p) => !p.dead);
+        powerUps = powerUps.filter((p) => !p.dead);
+
+        for (const p of powerUps) {
+          if (!p.dead && dist(ship, p) < ship.radius + p.radius) {
+            p.dead = true;
+            ship.tripleShot = POWERUP_DURATION;
+          }
         }
-        return;
-      }
 
-      if (pressed("Space")) {
-        bullets.push(...ship.tryShoot());
-      }
-
-      ship.update(dt, keys);
-      bullets.forEach((b) => b.update(dt));
-      asteroids.forEach((a) => a.update(dt));
-      particles.forEach((p) => p.update(dt));
-      powerUps.forEach((p) => p.update(dt));
-
-      bullets = bullets.filter((b) => !b.dead);
-      particles = particles.filter((p) => !p.dead);
-      powerUps = powerUps.filter((p) => !p.dead);
-
-      for (const p of powerUps) {
-        if (!p.dead && dist(ship, p) < ship.radius + p.radius) {
-          p.dead = true;
-          ship.tripleShot = POWERUP_DURATION;
-        }
-      }
-
-      // Bala vs asteroide
-      const newAsteroids: Asteroid[] = [];
-      for (const b of bullets) {
-        for (const a of asteroids) {
-          if (!a.dead && !b.dead && dist(b, a) < a.radius) {
-            b.dead = true;
-            a.dead = true;
-            score += POINTS[a.size];
-            explode(a.x, a.y, a.size * 5);
-            newAsteroids.push(...a.split());
-            if (!powerUpSpawned) {
-              killsSinceSpawn++;
-              const guaranteed = killsSinceSpawn >= 5;
-              if (guaranteed || Math.random() < POWERUP_DROP_CHANCE) {
-                powerUps.push(new PowerUp(a.x, a.y));
-                powerUpSpawned = true;
+        // Bala vs asteroide
+        const newAsteroids: Asteroid[] = [];
+        for (const b of bullets) {
+          for (const a of asteroids) {
+            if (!a.dead && !b.dead && dist(b, a) < a.radius) {
+              b.dead = true;
+              a.dead = true;
+              score += POINTS[a.size];
+              explode(a.x, a.y, a.size * 5);
+              newAsteroids.push(...a.split());
+              if (!powerUpSpawned) {
+                killsSinceSpawn++;
+                const guaranteed = killsSinceSpawn >= 5;
+                if (guaranteed || Math.random() < POWERUP_DROP_CHANCE) {
+                  powerUps.push(new PowerUp(a.x, a.y));
+                  powerUpSpawned = true;
+                }
               }
             }
           }
         }
-      }
-      asteroids = asteroids.filter((a) => !a.dead).concat(newAsteroids);
-      bullets = bullets.filter((b) => !b.dead);
+        asteroids = asteroids.filter((a) => !a.dead).concat(newAsteroids);
+        bullets = bullets.filter((b) => !b.dead);
 
-      // Nave vs asteroide
-      if (ship.invincible <= 0) {
-        for (const a of asteroids) {
-          if (dist(ship, a) < ship.radius + a.radius * 0.82) {
-            killShip();
-            break;
+        // Nave vs asteroide
+        if (ship.invincible <= 0) {
+          for (const a of asteroids) {
+            if (dist(ship, a) < ship.radius + a.radius * 0.82) {
+              killShip();
+              break;
+            }
           }
+        }
+
+        // Nivel completado
+        if (asteroids.length === 0) nextLevel();
+      }
+
+      function drawLifeIcon(x: number, y: number) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(-Math.PI / 2);
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 1.2;
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(9, 0);
+        ctx.lineTo(-6, -5);
+        ctx.lineTo(-3, 0);
+        ctx.lineTo(-6, 5);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawHUD() {
+        ctx.fillStyle = "#fff";
+        ctx.font = "15px monospace";
+
+        ctx.textAlign = "left";
+        ctx.fillText(`SCORE  ${score}`, 14, 26);
+
+        ctx.textAlign = "center";
+        ctx.fillText(`NIVEL ${level}`, W / 2, 26);
+
+        for (let i = 0; i < lives; i++) drawLifeIcon(W - 16 - i * 22, 18);
+
+        if (ship.tripleShot > 0) {
+          ctx.textAlign = "left";
+          ctx.fillStyle = "#0ff";
+          ctx.fillText(`3x  ${ship.tripleShot.toFixed(1)}s`, 14, 46);
         }
       }
 
-      // Nivel completado
-      if (asteroids.length === 0) nextLevel();
-    }
-
-    function drawLifeIcon(x: number, y: number) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-Math.PI / 2);
-      ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 1.2;
-      ctx.lineJoin = "round";
-      ctx.beginPath();
-      ctx.moveTo(9, 0);
-      ctx.lineTo(-6, -5);
-      ctx.lineTo(-3, 0);
-      ctx.lineTo(-6, 5);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function drawHUD() {
-      ctx.fillStyle = "#fff";
-      ctx.font = "15px monospace";
-
-      ctx.textAlign = "left";
-      ctx.fillText(`SCORE  ${score}`, 14, 26);
-
-      ctx.textAlign = "center";
-      ctx.fillText(`NIVEL ${level}`, W / 2, 26);
-
-      for (let i = 0; i < lives; i++) drawLifeIcon(W - 16 - i * 22, 18);
-
-      if (ship.tripleShot > 0) {
-        ctx.textAlign = "left";
-        ctx.fillStyle = "#0ff";
-        ctx.fillText(`3x  ${ship.tripleShot.toFixed(1)}s`, 14, 46);
+      function reportChanges() {
+        const statsDelta: ArcadeStats = {};
+        if (score !== prevScore) {
+          prevScore = score;
+          statsDelta.score = score;
+        }
+        if (lives !== prevLives) {
+          prevLives = lives;
+          statsDelta.lives = lives;
+        }
+        if (level !== prevLevel) {
+          prevLevel = level;
+          statsDelta.level = level;
+        }
+        if (Object.keys(statsDelta).length > 0) {
+          callbacksRef.current.onStatsChange(statsDelta);
+        }
+        if (state === "gameover" && prevState !== "gameover") {
+          callbacksRef.current.onGameOver(score);
+        }
+        prevState = state;
       }
-    }
 
-    function reportChanges() {
-      if (score !== prevScore) {
-        prevScore = score;
-        callbacksRef.current.onScoreChange(score);
+      function drawOverlay(title: string, sub: string) {
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 46px monospace";
+        ctx.fillText(title, W / 2, H / 2 - 18);
+        ctx.font = "18px monospace";
+        ctx.fillStyle = "rgba(255,255,255,0.65)";
+        ctx.fillText(sub, W / 2, H / 2 + 22);
       }
-      if (lives !== prevLives) {
-        prevLives = lives;
-        callbacksRef.current.onLivesChange(lives);
+
+      function draw() {
+        const scaleX = canvas.width / W;
+        const scaleY = canvas.height / H;
+        ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, W, H);
+
+        particles.forEach((p) => p.draw(ctx));
+        asteroids.forEach((a) => a.draw(ctx));
+        powerUps.forEach((p) => p.draw(ctx));
+        bullets.forEach((b) => b.draw(ctx));
+        ship.draw(ctx);
+
+        drawHUD();
+
+        if (state === "gameover") {
+          drawOverlay(
+            "GAME OVER",
+            `PUNTAJE: ${score}   —   ESPACIO PARA REINICIAR`,
+          );
+        }
       }
-      if (level !== prevLevel) {
-        prevLevel = level;
-        callbacksRef.current.onLevelChange(level);
+
+      let lastTime: number | null = null;
+      let rafId = 0;
+
+      function loop(ts: number) {
+        if (resetTimeRef.current) {
+          lastTime = null;
+          resetTimeRef.current = false;
+        }
+        const dt =
+          lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
+        lastTime = ts;
+        if (!pausedRef.current) update(dt);
+        reportChanges();
+        draw();
+        rafId = requestAnimationFrame(loop);
       }
-      if (state === "gameover" && prevState !== "gameover") {
-        callbacksRef.current.onGameOver(score);
-      }
-      prevState = state;
-    }
 
-    function drawOverlay(title: string, sub: string) {
-      ctx.textAlign = "center";
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 46px monospace";
-      ctx.fillText(title, W / 2, H / 2 - 18);
-      ctx.font = "18px monospace";
-      ctx.fillStyle = "rgba(255,255,255,0.65)";
-      ctx.fillText(sub, W / 2, H / 2 + 22);
-    }
+      actionsRef.current.restart = initGame;
+      actionsRef.current.forceGameOver = () => {
+        state = "gameover";
+      };
 
-    function draw() {
-      const scaleX = canvas.width / W;
-      const scaleY = canvas.height / H;
-      ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
-
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, W, H);
-
-      particles.forEach((p) => p.draw(ctx));
-      asteroids.forEach((a) => a.draw(ctx));
-      powerUps.forEach((p) => p.draw(ctx));
-      bullets.forEach((b) => b.draw(ctx));
-      ship.draw(ctx);
-
-      drawHUD();
-
-      if (state === "gameover") {
-        drawOverlay(
-          "GAME OVER",
-          `PUNTAJE: ${score}   —   ESPACIO PARA REINICIAR`,
-        );
-      }
-    }
-
-    let lastTime: number | null = null;
-    let rafId = 0;
-
-    function loop(ts: number) {
-      if (resetTimeRef.current) {
-        lastTime = null;
-        resetTimeRef.current = false;
-      }
-      const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
-      lastTime = ts;
-      if (!pausedRef.current) update(dt);
-      reportChanges();
-      draw();
+      initGame();
       rafId = requestAnimationFrame(loop);
-    }
 
-    actionsRef.current.restart = initGame;
-    actionsRef.current.forceGameOver = () => {
-      state = "gameover";
-    };
+      return () => {
+        cancelAnimationFrame(rafId);
+        resizeObserver.disconnect();
+        window.removeEventListener("keydown", onKeyDown);
+        window.removeEventListener("keyup", onKeyUp);
+      };
+    }, []);
 
-    initGame();
-    rafId = requestAnimationFrame(loop);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      resizeObserver.disconnect();
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-    };
-  }, []);
-
-  return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
-      <canvas
-        ref={canvasRef}
-        style={{ width: "100%", height: "100%", display: "block" }}
-      />
-    </div>
-  );
-});
+    return (
+      <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%", display: "block" }}
+        />
+      </div>
+    );
+  },
+);
