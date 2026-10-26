@@ -23,6 +23,11 @@ const HUD_LABELS: Record<HudStatKey, string> = {
 const DECORATIVE_HUD_STATS: HudStatKey[] = ["score", "lives", "level"];
 const DECORATIVE_INITIAL_STATS: ArcadeStats = { score: 0, lives: 3, level: 1 };
 
+function parseAspectRatio(aspectRatio: string): number {
+  const [w, h] = aspectRatio.split("/").map((part) => Number(part.trim()));
+  return w / h;
+}
+
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const { user } = useAuth();
