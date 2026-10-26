@@ -391,6 +391,14 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         );
       }
 
+      function initGame() {
+        paddle.x = (W - paddle.w) / 2;
+        score = 0;
+        lives = 3;
+        gameState = "playing";
+        loadLevel(1);
+      }
+
       const keys = { ArrowLeft: false, ArrowRight: false };
 
       const onKeyDown = (e: KeyboardEvent) => {
@@ -556,7 +564,12 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         if (gameState === "win") drawOverlay("¡COMPLETASTE EL JUEGO!");
       }
 
-      loadLevel(1);
+      actionsRef.current.restart = initGame;
+      actionsRef.current.forceGameOver = () => {
+        gameState = "gameover";
+      };
+
+      initGame();
 
       let lastTime: number | null = null;
       let rafId = 0;
