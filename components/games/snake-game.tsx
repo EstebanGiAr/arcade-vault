@@ -224,6 +224,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         const next = DIRECTION_KEYS[e.key];
         if (!next) return;
         e.preventDefault();
+        if (pausedRef.current) return;
         if (GAME_KEYS.has(e.key) && next !== OPPOSITE_DIRECTION[direction]) {
           pendingDirection = next;
         }
@@ -316,7 +317,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       }
 
       function update(dt: number) {
-        if (gameState !== "playing") return;
+        if (gameState !== "playing" || pausedRef.current) return;
         tickAccumulator += dt * 1000;
         while (tickAccumulator >= tickMs && gameState === "playing") {
           tickAccumulator -= tickMs;
@@ -383,6 +384,10 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       let lastTime: number | null = null;
       let rafId = 0;
       function loop(ts: number) {
+        if (resetTimeRef.current) {
+          lastTime = null;
+          resetTimeRef.current = false;
+        }
         const dt =
           lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
         lastTime = ts;
@@ -391,7 +396,17 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         draw();
         rafId = requestAnimationFrame(loop);
       }
-      rafId = requestAnimationFrame(loop);
+      if (imgLoaded) {
+        rafId = requestAnimationFrame(loop);
+      } else {
+        fruitsImg.addEventListener(
+          "load",
+          () => {
+            rafId = requestAnimationFrame(loop);
+          },
+          { once: true },
+        );
+      }
 
       return () => {
         cancelAnimationFrame(rafId);
