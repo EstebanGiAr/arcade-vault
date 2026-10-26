@@ -1,6 +1,6 @@
 # 08 — Juego real de Arkanoid (nueva entrada "arkanoid")
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 05, SPEC 06, SPEC 07
 **Fecha:** 2026-10-25
 
@@ -122,24 +122,24 @@ Cada paso deja el proyecto en estado funcional (`npm run dev` arranca sin errore
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] `mcp__supabase__execute_sql` (`select id from games`) muestra `asteroides`, `tetris` y `arkanoid`.
-- [ ] `/juegos` muestra la nueva tarjeta "ARKANOID" con la portada `.cover-bricks`.
-- [ ] En `/juegos/arkanoid` (sin partidas aún), "Mejor global" y "Partidas" muestran `0`.
-- [ ] En `/juegos/arkanoid/jugar` se ve y juega el Arkanoid real (bloques, paleta, pelota, explosiones animadas), no la UI decorativa falsa.
-- [ ] La paleta responde tanto a `←`/`→` como al movimiento del mouse sobre el área de juego.
-- [ ] Al romper un bloque se escucha el sonido de rotura (si el navegador permite audio) y se ve la animación de explosión; sumar 10 puntos y actualizar el HUD externo de React en el mismo frame.
-- [ ] Limpiar todos los bloques de un nivel carga el siguiente nivel (bloques nuevos, pelota reiniciada, misma paleta); al limpiar el nivel 5 se dispara el fin de partida con el mensaje "¡COMPLETASTE EL JUEGO!" en el overlay de canvas y abre el modal de React con la puntuación final.
-- [ ] Perder las 3 vidas (pelota cae fuera del canvas 3 veces) detiene el juego, muestra "GAME OVER" en el overlay de canvas y abre el modal "FIN DEL JUEGO" de React con la puntuación final.
-- [ ] Pulsar "PAUSA" congela completamente la partida (la pelota no se mueve, la paleta no responde a teclado ni mouse); "REANUDAR" continúa sin saltos de velocidad.
-- [ ] Pulsar "FIN" en cualquier momento detiene la partida y muestra el modal "FIN DEL JUEGO" de React con la puntuación actual.
-- [ ] Guardar la puntuación desde el modal inserta una fila real en `scores` con `game_id: "arkanoid"`.
-- [ ] "JUGAR DE NUEVO" reinicia completamente la partida (nivel 1, 3 vidas, score en 0) sin desmontar el componente del canvas.
-- [ ] Redimensionar la ventana mantiene el área de juego en proporción 4:3 dentro de `.crt-screen`, sin recortar ni deformar.
-- [ ] `read_console_messages` no muestra errores durante una partida completa de arkanoid (incluyendo el caso de que el navegador bloquee el autoplay de audio).
-- [ ] `/salon-de-la-fama` muestra una pestaña "ARKANOID" junto a "ASTEROIDES" y "TETRIS", y tras guardar una puntuación esa pestaña refleja la fila real.
-- [ ] `/juegos/asteroides/jugar` y `/juegos/tetris/jugar` siguen funcionando exactamente igual que antes de este spec.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] `mcp__supabase__execute_sql` (`select id from games`) muestra `asteroides`, `tetris` y `arkanoid`.
+- [x] `/juegos` muestra la nueva tarjeta "ARKANOID" con la portada `.cover-bricks`.
+- [x] En `/juegos/arkanoid` (sin partidas aún), "Mejor global" y "Partidas" muestran `0`.
+- [x] En `/juegos/arkanoid/jugar` se ve y juega el Arkanoid real (bloques, paleta, pelota, explosiones animadas), no la UI decorativa falsa.
+- [x] La paleta responde tanto a `←`/`→` como al movimiento del mouse sobre el área de juego.
+- [x] Al romper un bloque se escucha el sonido de rotura (si el navegador permite audio) y se ve la animación de explosión; sumar 10 puntos y actualizar el HUD externo de React en el mismo frame.
+- [x] Limpiar todos los bloques de un nivel carga el siguiente nivel (bloques nuevos, pelota reiniciada, misma paleta); al limpiar el nivel 5 se dispara el fin de partida con el mensaje "¡COMPLETASTE EL JUEGO!" en el overlay de canvas y abre el modal de React con la puntuación final.
+- [x] Perder las 3 vidas (pelota cae fuera del canvas 3 veces) detiene el juego, muestra "GAME OVER" en el overlay de canvas y abre el modal "FIN DEL JUEGO" de React con la puntuación final.
+- [x] Pulsar "PAUSA" congela completamente la partida (la pelota no se mueve, la paleta no responde a teclado ni mouse); "REANUDAR" continúa sin saltos de velocidad.
+- [x] Pulsar "FIN" en cualquier momento detiene la partida y muestra el modal "FIN DEL JUEGO" de React con la puntuación actual.
+- [x] Guardar la puntuación desde el modal inserta una fila real en `scores` con `game_id: "arkanoid"`.
+- [x] "JUGAR DE NUEVO" reinicia completamente la partida (nivel 1, 3 vidas, score en 0) sin desmontar el componente del canvas.
+- [x] Redimensionar la ventana mantiene el área de juego en proporción 4:3 dentro de `.crt-screen`, sin recortar ni deformar.
+- [x] `read_console_messages` no muestra errores durante una partida completa de arkanoid (incluyendo el caso de que el navegador bloquee el autoplay de audio).
+- [x] `/salon-de-la-fama` muestra una pestaña "ARKANOID" junto a "ASTEROIDES" y "TETRIS", y tras guardar una puntuación esa pestaña refleja la fila real.
+- [x] `/juegos/asteroides/jugar` y `/juegos/tetris/jugar` siguen funcionando exactamente igual que antes de este spec.
 
 ## Decisiones tomadas y descartadas
 
