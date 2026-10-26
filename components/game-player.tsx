@@ -250,6 +250,14 @@ export function GamePlayer({ game }: { game: Game }) {
                 JUGAR DE NUEVO
               </button>
               <button
+                className="btn"
+                onClick={() =>
+                  router.push(`/salon-de-la-fama?juego=${game.id}`)
+                }
+              >
+                VER RANKING
+              </button>
+              <button
                 className="btn magenta"
                 onClick={() => router.push("/juegos")}
               >
