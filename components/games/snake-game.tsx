@@ -190,6 +190,28 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       let tickMs = INITIAL_TICK_MS;
       let fruitsEaten = 0;
       let tickAccumulator = 0;
+      let prevScore = score;
+      let prevLevel = level;
+      let prevState: GameState = gameState;
+
+      function reportChanges() {
+        const statsDelta: ArcadeStats = {};
+        if (score !== prevScore) {
+          prevScore = score;
+          statsDelta.score = score;
+        }
+        if (level !== prevLevel) {
+          prevLevel = level;
+          statsDelta.level = level;
+        }
+        if (Object.keys(statsDelta).length > 0) {
+          callbacksRef.current.onStatsChange(statsDelta);
+        }
+        if (gameState === "gameover" && prevState !== "gameover") {
+          callbacksRef.current.onGameOver(score);
+        }
+        prevState = gameState;
+      }
 
       let imgLoaded = false;
       const fruitsImg = new Image();
@@ -360,6 +382,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
         lastTime = ts;
         update(dt);
+        reportChanges();
         draw();
         rafId = requestAnimationFrame(loop);
       }
