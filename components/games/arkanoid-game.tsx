@@ -304,6 +304,31 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
       resizeObserver.observe(container);
 
+      const paddle: Paddle = { x: (W - 81) / 2, y: 560, w: 81, h: 14 };
+      const keys = { ArrowLeft: false, ArrowRight: false };
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+          e.preventDefault();
+          keys[e.key] = true;
+        }
+      };
+      const onKeyUp = (e: KeyboardEvent) => {
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+          keys[e.key] = false;
+        }
+      };
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+
+      const onMouseMove = (e: MouseEvent) => {
+        const rect = container.getBoundingClientRect();
+        const scaleX = W / rect.width;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        paddle.x = Math.max(0, Math.min(W - paddle.w, mouseX - paddle.w / 2));
+      };
+      container.addEventListener("mousemove", onMouseMove);
+
       function draw() {
         const scaleX = canvas.width / W;
         const scaleY = canvas.height / H;
@@ -323,6 +348,9 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       return () => {
         cancelAnimationFrame(rafId);
         resizeObserver.disconnect();
+        window.removeEventListener("keydown", onKeyDown);
+        window.removeEventListener("keyup", onKeyUp);
+        container.removeEventListener("mousemove", onMouseMove);
       };
     }, []);
 
