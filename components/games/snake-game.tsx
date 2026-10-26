@@ -375,6 +375,11 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       initGame();
 
+      actionsRef.current.restart = initGame;
+      actionsRef.current.forceGameOver = () => {
+        gameState = "gameover";
+      };
+
       let lastTime: number | null = null;
       let rafId = 0;
       function loop(ts: number) {
