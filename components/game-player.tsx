@@ -23,6 +23,11 @@ const HUD_LABELS: Record<HudStatKey, string> = {
 const DECORATIVE_HUD_STATS: HudStatKey[] = ["score", "lives", "level"];
 const DECORATIVE_INITIAL_STATS: ArcadeStats = { score: 0, lives: 3, level: 1 };
 
+function parseAspectRatio(aspectRatio: string): number {
+  const [w, h] = aspectRatio.split("/").map((part) => Number(part.trim()));
+  return w / h;
+}
+
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -139,16 +144,12 @@ export function GamePlayer({ game }: { game: Game }) {
       <div className="crt">
         <div
           className="crt-screen"
-          style={
-            entry?.aspectRatio
-              ? {
-                  aspectRatio: entry.aspectRatio,
-                  height: "min(70dvh, 760px)",
-                  width: "fit-content",
-                  margin: "0 auto",
-                }
-              : undefined
-          }
+          style={{
+            aspectRatio: entry?.aspectRatio ?? "4 / 3",
+            width: "100%",
+            maxWidth: `min(100%, calc(min(70dvh, 760px) * ${parseAspectRatio(entry?.aspectRatio ?? "4 / 3")}))`,
+            margin: "0 auto",
+          }}
         >
           {entry ? (
             <entry.component
@@ -247,6 +248,14 @@ export function GamePlayer({ game }: { game: Game }) {
             <div className="actions">
               <button className="btn" onClick={restart}>
                 JUGAR DE NUEVO
+              </button>
+              <button
+                className="btn"
+                onClick={() =>
+                  router.push(`/salon-de-la-fama?juego=${game.id}`)
+                }
+              >
+                VER RANKING
               </button>
               <button
                 className="btn magenta"

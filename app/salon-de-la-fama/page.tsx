@@ -8,13 +8,20 @@ import { HallOfFameTabs } from "@/components/hall-of-fame-tabs";
 // puede prerenderizarse como shell estático bajo cacheComponents.
 export const instant = false;
 
-export default async function HallOfFamePage() {
+export default async function HallOfFamePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ juego?: string }>;
+}) {
   const supabase = await createClient();
   const games = await getAllGames(supabase);
   const firstGame = games[0];
 
+  const { juego } = await searchParams;
+  const initialTab = games.some((g) => g.id === juego) ? juego! : firstGame.id;
+
   const initialRows: ScoreRow[] = (
-    await getTopScores(supabase, firstGame.id, 12)
+    await getTopScores(supabase, initialTab, 12)
   ).map((s, i) => ({
     rank: i + 1,
     name: s.name,
@@ -25,7 +32,7 @@ export default async function HallOfFamePage() {
   return (
     <HallOfFameTabs
       games={games}
-      initialTab={firstGame.id}
+      initialTab={initialTab}
       initialRows={initialRows}
     />
   );
