@@ -5,6 +5,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type {
   ArcadeGameHandle,
   ArcadeGameProps,
+  ArcadeStats,
 } from "@/components/games/registry";
 
 const W = 800;
@@ -315,10 +316,41 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       };
       let blocks: Block[] = [];
       let explosions: Explosion[] = [];
-      const lives = 3;
-      const score = 0;
-      const gameState: GameState = "playing";
+      let lives = 3;
+      let score = 0;
+      let gameState: GameState = "playing";
       let currentLevel = 1;
+      let prevScore = score;
+      let prevLives = lives;
+      let prevLevel = currentLevel;
+      let prevState: GameState = gameState;
+
+      function reportChanges() {
+        const statsDelta: ArcadeStats = {};
+        if (score !== prevScore) {
+          prevScore = score;
+          statsDelta.score = score;
+        }
+        if (lives !== prevLives) {
+          prevLives = lives;
+          statsDelta.lives = lives;
+        }
+        if (currentLevel !== prevLevel) {
+          prevLevel = currentLevel;
+          statsDelta.level = currentLevel;
+        }
+        if (Object.keys(statsDelta).length > 0) {
+          callbacksRef.current.onStatsChange(statsDelta);
+        }
+        if (
+          (gameState === "gameover" || gameState === "win") &&
+          prevState !== "gameover" &&
+          prevState !== "win"
+        ) {
+          callbacksRef.current.onGameOver(score);
+        }
+        prevState = gameState;
+      }
 
       const bounceSound = new Audio("/games/arkanoid/sounds/ball-bounce.mp3");
       const breakSound = new Audio("/games/arkanoid/sounds/break-sound.mp3");
@@ -537,6 +569,7 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
         lastTime = ts;
         if (!pausedRef.current) update(dt);
+        reportChanges();
         draw();
         rafId = requestAnimationFrame(loop);
       }
