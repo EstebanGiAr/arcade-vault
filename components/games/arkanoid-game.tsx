@@ -461,6 +461,16 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         }
       }
 
+      function drawOverlay(message: string) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 64px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(message, W / 2, H / 2);
+      }
+
       function draw() {
         const scaleX = canvas.width / W;
         const scaleY = canvas.height / H;
@@ -468,6 +478,50 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, W, H);
+
+        for (const block of blocks) {
+          if (block.alive)
+            drawSprite(
+              ctx,
+              "block_" + block.color,
+              block.x,
+              block.y,
+              block.w,
+              block.h,
+            );
+        }
+
+        for (const exp of explosions) {
+          const frameIndex = Math.min(
+            Math.floor((exp.elapsed / EXPLOSION_DURATION) * 4),
+            3,
+          );
+          const frames = EXPLOSION_FRAMES[exp.color];
+          if (frames)
+            drawFrame(ctx, frames[frameIndex], exp.x, exp.y, exp.w, exp.h);
+        }
+
+        drawSprite(ctx, "paddle", paddle.x, paddle.y, paddle.w, paddle.h);
+        drawSprite(ctx, "ball", ball.x, ball.y, ball.w, ball.h);
+
+        if (gameState === "playing") {
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 18px monospace";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText("Score: " + score, 10, 10);
+          ctx.textAlign = "center";
+          ctx.fillText("Nivel: " + currentLevel, W / 2, 10);
+          const ballSize = 16;
+          const ballSpacing = 4;
+          for (let i = 0; i < lives; i++) {
+            const bx = W - 10 - (lives - i) * (ballSize + ballSpacing);
+            drawSprite(ctx, "ball", bx, 10, ballSize, ballSize);
+          }
+        }
+
+        if (gameState === "gameover") drawOverlay("GAME OVER");
+        if (gameState === "win") drawOverlay("¡COMPLETASTE EL JUEGO!");
       }
 
       loadLevel(1);
