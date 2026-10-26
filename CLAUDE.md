@@ -41,7 +41,7 @@ Las páginas que leen datos en vivo declaran `export const instant = false`, por
 ### Juegos
 
 Todos los juegos viven en `components/games/` y se exponen por el **registry** (`components/games/registry.ts`), que es el único punto de acoplamiento con el reproductor:
-(busca en references\implemented-games.md) cuando necesites mirar cuales juegos estan implementados.
+(busca en references\implemented-games.md) cuando necesites mirar cuales juegos estan implementados. `references/game-suggestions.md` es el backlog de candidatos (pendientes/implementados/descartados) mantenido por el agente `game-planner`.
 
 ```ts
 GAME_REGISTRY: Record<string, ArcadeGameEntry>;
@@ -84,8 +84,9 @@ No hay auth real. `components/auth-provider.tsx` + `lib/storage.ts` guardan solo
   - `references/started-games/` → juegos vanilla (`02-asteroids`, `03-tetris`, `04-arkanoid`) que son la fuente de los ports.
   - `references/source-assets/` → sprites y assets crudos.
 
-## Skills
+## Skills y agentes
 
+- **`game-planner`** (`.claude/agents/game-planner.md`, subagente): decide qué juego añadir a continuación. Audita lo implementado, puntúa candidatos contra el contrato del registry y los huecos del catálogo, y mantiene el backlog en `references/game-suggestions.md`. No escribe specs: su salida alimenta `/add-game`. Es el paso previo, no un sustituto, de esa skill.
 - **`/add-game`** (`.claude/skills/add-game/`, local a este repo): diseña la spec de un juego nuevo con leaderboard. Es una especialización de `/spec` para el dominio arcade; no escribe código, solo `specs/NN-juego-<id>.md`. Sus referencias (`port-recipe.md`, `platform-integration.md`, `game-spec-notes.md`) documentan la receta de port al stack React/canvas/Supabase. Usarla siempre que se vaya a añadir un juego.
 - **`/impeccable`** para diseñar o revisar interfaz de usuario, respetando las excepciones ya registradas en `.impeccable/config.json`.
 
