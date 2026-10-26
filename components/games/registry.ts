@@ -2,6 +2,7 @@ import type { ComponentType, RefAttributes } from "react";
 
 import { ArkanoidGame } from "@/components/games/arkanoid-game";
 import { AsteroidsGame } from "@/components/games/asteroids-game";
+import { SnakeGame } from "@/components/games/snake-game";
 import { TetrisGame } from "@/components/games/tetris-game";
 
 export type HudStatKey = "score" | "lives" | "level" | "lines";
@@ -41,5 +42,10 @@ export const GAME_REGISTRY: Record<string, ArcadeGameEntry> = {
     component: ArkanoidGame,
     hudStats: ["score", "lives", "level"],
     initialStats: { score: 0, lives: 3, level: 1 },
+  },
+  snake: {
+    component: SnakeGame,
+    hudStats: ["score", "level"],
+    initialStats: { score: 0, level: 1 },
   },
 };
