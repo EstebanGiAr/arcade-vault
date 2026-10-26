@@ -1,6 +1,6 @@
 # 09 — Juego real de Snake (nueva entrada "snake")
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 05, SPEC 06, SPEC 07
 **Fecha:** 2026-10-25
 
@@ -139,25 +139,25 @@ Cada paso deja el proyecto en estado funcional (`npm run dev` arranca sin errore
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] `mcp__supabase__execute_sql` (`select id from games`) muestra `asteroides`, `tetris`, `arkanoid` y `snake`.
-- [ ] `/juegos` muestra la nueva tarjeta "SERPIENTE" con la portada `.cover-snake`.
-- [ ] En `/juegos/snake` (sin partidas aún), "Mejor global" y "Partidas" muestran `0`.
-- [ ] En `/juegos/snake/jugar` se ve y juega el Snake real (serpiente, fruta, tablero de celdas), no la UI decorativa falsa.
-- [ ] La serpiente se mueve con `←→↑↓`; pulsar la dirección exactamente opuesta a la actual no la hace chocar contra su propio cuello.
-- [ ] Comer una fruta suma los puntos correspondientes a su tipo (según `FRUIT_POINTS`), hace crecer la serpiente una celda, y actualiza el HUD externo de React en el mismo frame en que cambia.
-- [ ] Cada 5 frutas comidas la serpiente se mueve notablemente más rápido y el stat "Nivel" del HUD sube en 1.
-- [ ] Chocar contra el borde del tablero detiene el juego, muestra "GAME OVER" en el overlay de canvas y abre el modal "FIN DEL JUEGO" de React con la puntuación final.
-- [ ] Chocar contra el propio cuerpo produce el mismo resultado que chocar contra el borde.
-- [ ] Pulsar "PAUSA" congela completamente la partida (la serpiente no avanza, las flechas no cambian su dirección); "REANUDAR" continúa sin saltos de velocidad.
-- [ ] Pulsar "FIN" en cualquier momento detiene la partida y muestra el modal "FIN DEL JUEGO" de React con la puntuación actual.
-- [ ] Guardar la puntuación desde el modal inserta una fila real en `scores` con `game_id: "snake"`.
-- [ ] "JUGAR DE NUEVO" reinicia completamente la partida (serpiente de longitud 3, nivel 1, score en 0) sin desmontar el componente del canvas.
-- [ ] Redimensionar la ventana mantiene el área de juego en proporción 4:3 dentro de `.crt-screen`, sin recortar ni deformar.
-- [ ] `read_console_messages` no muestra errores durante una partida completa de snake.
-- [ ] `/salon-de-la-fama` muestra una pestaña "SERPIENTE" junto a las otras tres, y tras guardar una puntuación esa pestaña refleja la fila real.
-- [ ] `/juegos/asteroides/jugar`, `/juegos/tetris/jugar` y `/juegos/arkanoid/jugar` siguen funcionando exactamente igual que antes de este spec.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] `mcp__supabase__execute_sql` (`select id from games`) muestra `asteroides`, `tetris`, `arkanoid` y `snake`.
+- [x] `/juegos` muestra la nueva tarjeta "SERPIENTE" con la portada `.cover-snake`.
+- [x] En `/juegos/snake` (sin partidas aún), "Mejor global" y "Partidas" muestran `0`.
+- [x] En `/juegos/snake/jugar` se ve y juega el Snake real (serpiente, fruta, tablero de celdas), no la UI decorativa falsa.
+- [x] La serpiente se mueve con `←→↑↓`; pulsar la dirección exactamente opuesta a la actual no la hace chocar contra su propio cuello.
+- [x] Comer una fruta suma los puntos correspondientes a su tipo (según `FRUIT_POINTS`), hace crecer la serpiente una celda, y actualiza el HUD externo de React en el mismo frame en que cambia.
+- [x] Cada 5 frutas comidas la serpiente se mueve notablemente más rápido y el stat "Nivel" del HUD sube en 1.
+- [x] Chocar contra el borde del tablero detiene el juego, muestra "GAME OVER" en el overlay de canvas y abre el modal "FIN DEL JUEGO" de React con la puntuación final.
+- [x] Chocar contra el propio cuerpo produce el mismo resultado que chocar contra el borde.
+- [x] Pulsar "PAUSA" congela completamente la partida (la serpiente no avanza, las flechas no cambian su dirección); "REANUDAR" continúa sin saltos de velocidad.
+- [x] Pulsar "FIN" en cualquier momento detiene la partida y muestra el modal "FIN DEL JUEGO" de React con la puntuación actual.
+- [x] Guardar la puntuación desde el modal inserta una fila real en `scores` con `game_id: "snake"`.
+- [x] "JUGAR DE NUEVO" reinicia completamente la partida (serpiente de longitud 3, nivel 1, score en 0) sin desmontar el componente del canvas.
+- [x] Redimensionar la ventana mantiene el área de juego en proporción 4:3 dentro de `.crt-screen`, sin recortar ni deformar.
+- [x] `read_console_messages` no muestra errores durante una partida completa de snake.
+- [x] `/salon-de-la-fama` muestra una pestaña "SERPIENTE" junto a las otras tres, y tras guardar una puntuación esa pestaña refleja la fila real.
+- [x] `/juegos/asteroides/jugar`, `/juegos/tetris/jugar` y `/juegos/arkanoid/jugar` siguen funcionando exactamente igual que antes de este spec.
 
 ## Decisiones tomadas y descartadas
 
