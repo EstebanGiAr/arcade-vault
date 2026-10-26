@@ -100,6 +100,20 @@ const FRUIT_POINTS: Record<FruitKind, number> = {
   melon: 50,
 };
 
+const DIRECTION_KEYS: Record<string, Direction> = {
+  ArrowUp: "up",
+  ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowRight: "right",
+};
+const GAME_KEYS = new Set(Object.keys(DIRECTION_KEYS));
+const OPPOSITE_DIRECTION: Record<Direction, Direction> = {
+  up: "down",
+  down: "up",
+  left: "right",
+  right: "left",
+};
+
 export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
   function SnakeGame({ paused, onStatsChange, onGameOver }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -166,6 +180,19 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
       resizeObserver.observe(container);
 
+      const direction: Direction = "right";
+      let pendingDirection: Direction | null = null;
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        const next = DIRECTION_KEYS[e.key];
+        if (!next) return;
+        e.preventDefault();
+        if (GAME_KEYS.has(e.key) && next !== OPPOSITE_DIRECTION[direction]) {
+          pendingDirection = next;
+        }
+      };
+      window.addEventListener("keydown", onKeyDown);
+
       function draw() {
         const scaleX = canvas.width / W;
         const scaleY = canvas.height / H;
@@ -185,6 +212,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       return () => {
         cancelAnimationFrame(rafId);
         resizeObserver.disconnect();
+        window.removeEventListener("keydown", onKeyDown);
       };
     }, []);
 
