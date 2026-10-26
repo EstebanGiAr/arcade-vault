@@ -180,8 +180,16 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
       resizeObserver.observe(container);
 
-      const direction: Direction = "right";
+      let direction: Direction = "right";
       let pendingDirection: Direction | null = null;
+      let snake: Cell[] = [];
+      let fruit: Fruit;
+      let gameState: GameState = "playing";
+      let score = 0;
+      let level = 1;
+      let tickMs = INITIAL_TICK_MS;
+      let fruitsEaten = 0;
+      let tickAccumulator = 0;
 
       const onKeyDown = (e: KeyboardEvent) => {
         const next = DIRECTION_KEYS[e.key];
@@ -193,6 +201,100 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       };
       window.addEventListener("keydown", onKeyDown);
 
+      function randomFreeCell(): Cell {
+        let cell: Cell;
+        do {
+          cell = {
+            col: Math.floor(Math.random() * COLS),
+            row: Math.floor(Math.random() * ROWS),
+          };
+        } while (snake.some((s) => s.col === cell.col && s.row === cell.row));
+        return cell;
+      }
+
+      function spawnFruit() {
+        const kind =
+          FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
+        fruit = { cell: randomFreeCell(), kind };
+      }
+
+      function initGame() {
+        const startCol = Math.floor(COLS / 2);
+        const startRow = Math.floor(ROWS / 2);
+        snake = [
+          { col: startCol, row: startRow },
+          { col: startCol - 1, row: startRow },
+          { col: startCol - 2, row: startRow },
+        ];
+        direction = "right";
+        pendingDirection = null;
+        gameState = "playing";
+        score = 0;
+        level = 1;
+        tickMs = INITIAL_TICK_MS;
+        fruitsEaten = 0;
+        tickAccumulator = 0;
+        spawnFruit();
+      }
+
+      function tick() {
+        if (
+          pendingDirection &&
+          pendingDirection !== OPPOSITE_DIRECTION[direction]
+        ) {
+          direction = pendingDirection;
+        }
+        pendingDirection = null;
+
+        const head = snake[0];
+        let newHead: Cell;
+        if (direction === "up") newHead = { col: head.col, row: head.row - 1 };
+        else if (direction === "down")
+          newHead = { col: head.col, row: head.row + 1 };
+        else if (direction === "left")
+          newHead = { col: head.col - 1, row: head.row };
+        else newHead = { col: head.col + 1, row: head.row };
+
+        if (
+          newHead.col < 0 ||
+          newHead.col >= COLS ||
+          newHead.row < 0 ||
+          newHead.row >= ROWS
+        ) {
+          gameState = "gameover";
+          return;
+        }
+        if (snake.some((s) => s.col === newHead.col && s.row === newHead.row)) {
+          gameState = "gameover";
+          return;
+        }
+
+        const ateFruit =
+          newHead.col === fruit.cell.col && newHead.row === fruit.cell.row;
+
+        snake = [newHead, ...snake];
+        if (ateFruit) {
+          score += FRUIT_POINTS[fruit.kind];
+          fruitsEaten++;
+          if (fruitsEaten % FRUITS_PER_LEVEL === 0) {
+            tickMs = Math.max(MIN_TICK_MS, tickMs - TICK_STEP_MS);
+            level++;
+          }
+          spawnFruit();
+        } else {
+          snake.pop();
+        }
+      }
+
+      function update(dt: number) {
+        if (gameState !== "playing") return;
+        tickAccumulator += dt * 1000;
+        while (tickAccumulator >= tickMs && gameState === "playing") {
+          tickAccumulator -= tickMs;
+          tick();
+        }
+      }
+
       function draw() {
         const scaleX = canvas.width / W;
         const scaleY = canvas.height / H;
@@ -202,8 +304,15 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.fillRect(0, 0, W, H);
       }
 
+      initGame();
+
+      let lastTime: number | null = null;
       let rafId = 0;
-      function loop() {
+      function loop(ts: number) {
+        const dt =
+          lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
+        lastTime = ts;
+        update(dt);
         draw();
         rafId = requestAnimationFrame(loop);
       }
