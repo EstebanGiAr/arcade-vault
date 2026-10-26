@@ -569,8 +569,6 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         gameState = "gameover";
       };
 
-      initGame();
-
       let lastTime: number | null = null;
       let rafId = 0;
       function loop(ts: number) {
@@ -586,7 +584,11 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         draw();
         rafId = requestAnimationFrame(loop);
       }
-      rafId = requestAnimationFrame(loop);
+
+      loadSpritesheet(() => {
+        initGame();
+        rafId = requestAnimationFrame(loop);
+      });
 
       return () => {
         cancelAnimationFrame(rafId);
