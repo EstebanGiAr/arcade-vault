@@ -99,3 +99,102 @@ const FRUIT_POINTS: Record<FruitKind, number> = {
   pineapple: 50,
   melon: 50,
 };
+
+export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
+  function SnakeGame({ paused, onStatsChange, onGameOver }, ref) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const pausedRef = useRef(paused);
+    const resetTimeRef = useRef(false);
+    const callbacksRef = useRef({
+      onStatsChange,
+      onGameOver,
+    });
+    const actionsRef = useRef<ArcadeGameHandle>({
+      restart: () => {},
+      forceGameOver: () => {},
+    });
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        restart: () => actionsRef.current.restart(),
+        forceGameOver: () => actionsRef.current.forceGameOver(),
+      }),
+      [],
+    );
+
+    useEffect(() => {
+      if (pausedRef.current && !paused) {
+        resetTimeRef.current = true;
+      }
+      pausedRef.current = paused;
+    }, [paused]);
+
+    useEffect(() => {
+      callbacksRef.current = {
+        onStatsChange,
+        onGameOver,
+      };
+    }, [onStatsChange, onGameOver]);
+
+    useEffect(() => {
+      const maybeContainer = containerRef.current;
+      const maybeCanvas = canvasRef.current;
+      if (!maybeContainer || !maybeCanvas) return;
+      const container: HTMLDivElement = maybeContainer;
+      const canvas: HTMLCanvasElement = maybeCanvas;
+      const maybeCtx = canvas.getContext("2d");
+      if (!maybeCtx) return;
+      const ctx: CanvasRenderingContext2D = maybeCtx;
+
+      let pixelWidth = 0;
+      let pixelHeight = 0;
+      function resizeCanvasToContainer() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = container.getBoundingClientRect();
+        const newWidth = Math.max(1, Math.round(rect.width * dpr));
+        const newHeight = Math.max(1, Math.round(rect.height * dpr));
+        if (newWidth !== pixelWidth || newHeight !== pixelHeight) {
+          pixelWidth = newWidth;
+          pixelHeight = newHeight;
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+        }
+      }
+      resizeCanvasToContainer();
+      const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
+      resizeObserver.observe(container);
+
+      function draw() {
+        const scaleX = canvas.width / W;
+        const scaleY = canvas.height / H;
+        ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      let rafId = 0;
+      function loop() {
+        draw();
+        rafId = requestAnimationFrame(loop);
+      }
+      rafId = requestAnimationFrame(loop);
+
+      return () => {
+        cancelAnimationFrame(rafId);
+        resizeObserver.disconnect();
+      };
+    }, []);
+
+    return (
+      <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%", display: "block" }}
+        />
+      </div>
+    );
+  },
+);
