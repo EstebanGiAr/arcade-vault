@@ -144,16 +144,12 @@ export function GamePlayer({ game }: { game: Game }) {
       <div className="crt">
         <div
           className="crt-screen"
-          style={
-            entry?.aspectRatio
-              ? {
-                  aspectRatio: entry.aspectRatio,
-                  height: "min(70dvh, 760px)",
-                  width: "fit-content",
-                  margin: "0 auto",
-                }
-              : undefined
-          }
+          style={{
+            aspectRatio: entry?.aspectRatio ?? "4 / 3",
+            width: "100%",
+            maxWidth: `min(100%, calc(min(70dvh, 760px) * ${parseAspectRatio(entry?.aspectRatio ?? "4 / 3")}))`,
+            margin: "0 auto",
+          }}
         >
           {entry ? (
             <entry.component
