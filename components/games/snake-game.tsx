@@ -191,6 +191,13 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       let fruitsEaten = 0;
       let tickAccumulator = 0;
 
+      let imgLoaded = false;
+      const fruitsImg = new Image();
+      fruitsImg.onload = () => {
+        imgLoaded = true;
+      };
+      fruitsImg.src = "/games/snake/fruits.png";
+
       const onKeyDown = (e: KeyboardEvent) => {
         const next = DIRECTION_KEYS[e.key];
         if (!next) return;
@@ -295,6 +302,16 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         }
       }
 
+      function drawOverlay(message: string) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 64px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(message, W / 2, H / 2);
+      }
+
       function draw() {
         const scaleX = canvas.width / W;
         const scaleY = canvas.height / H;
@@ -302,6 +319,36 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, W, H);
+
+        snake.forEach((cell, index) => {
+          ctx.fillStyle = index === 0 ? "#9dff6b" : "#4caf32";
+          ctx.fillRect(cell.col * CELL, cell.row * CELL, CELL - 1, CELL - 1);
+        });
+
+        if (imgLoaded) {
+          const frame = FRUITS[fruit.kind];
+          ctx.drawImage(
+            fruitsImg,
+            frame.x,
+            frame.y,
+            frame.w,
+            frame.h,
+            fruit.cell.col * CELL,
+            fruit.cell.row * CELL,
+            CELL,
+            CELL,
+          );
+        }
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 18px monospace";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText("Score: " + score, 10, 10);
+        ctx.textAlign = "center";
+        ctx.fillText("Nivel: " + level, W / 2, 10);
+
+        if (gameState === "gameover") drawOverlay("GAME OVER");
       }
 
       initGame();
