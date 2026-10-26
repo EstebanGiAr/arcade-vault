@@ -305,6 +305,60 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       resizeObserver.observe(container);
 
       const paddle: Paddle = { x: (W - 81) / 2, y: 560, w: 81, h: 14 };
+      const ball: Ball = {
+        x: 0,
+        y: 0,
+        w: 16,
+        h: 16,
+        vx: BASE_BALL_VX,
+        vy: BASE_BALL_VY,
+      };
+      let blocks: Block[] = [];
+      let explosions: Explosion[] = [];
+      const lives = 3;
+      const score = 0;
+      const gameState: GameState = "playing";
+      let currentLevel = 1;
+
+      const bounceSound = new Audio("/games/arkanoid/sounds/ball-bounce.mp3");
+      const breakSound = new Audio("/games/arkanoid/sounds/break-sound.mp3");
+      function playSound(audio: HTMLAudioElement) {
+        const clone = audio.cloneNode() as HTMLAudioElement;
+        clone.play().catch(() => {});
+      }
+
+      function initBall() {
+        const speed = LEVELS[currentLevel - 1].speed;
+        ball.x = paddle.x + (paddle.w - ball.w) / 2;
+        ball.y = paddle.y - ball.h;
+        ball.vx = BASE_BALL_VX * speed;
+        ball.vy = BASE_BALL_VY * speed;
+      }
+
+      function loadLevel(n: number) {
+        currentLevel = n;
+        const level = LEVELS[n - 1];
+        blocks = level.blocks.map((b) => ({
+          x: BLOCKS_ORIGIN_X + b.col * BLOCK_W,
+          y: BLOCKS_ORIGIN_Y + b.row * BLOCK_H,
+          w: BLOCK_W,
+          h: BLOCK_H,
+          color: b.color,
+          alive: true,
+        }));
+        explosions = [];
+        initBall();
+      }
+
+      function collideAABB(block: Block) {
+        return (
+          ball.x < block.x + block.w &&
+          ball.x + ball.w > block.x &&
+          ball.y < block.y + block.h &&
+          ball.y + ball.h > block.y
+        );
+      }
+
       const keys = { ArrowLeft: false, ArrowRight: false };
 
       const onKeyDown = (e: KeyboardEvent) => {
@@ -329,6 +383,84 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       };
       container.addEventListener("mousemove", onMouseMove);
 
+      function update(dt: number) {
+        if (gameState !== "playing") return;
+
+        if (keys.ArrowLeft)
+          paddle.x = Math.max(0, paddle.x - PADDLE_SPEED * dt);
+        if (keys.ArrowRight)
+          paddle.x = Math.min(W - paddle.w, paddle.x + PADDLE_SPEED * dt);
+
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+
+        if (ball.x <= 0) {
+          ball.x = 0;
+          ball.vx = Math.abs(ball.vx);
+          playSound(bounceSound);
+        }
+        if (ball.x + ball.w >= W) {
+          ball.x = W - ball.w;
+          ball.vx = -Math.abs(ball.vx);
+          playSound(bounceSound);
+        }
+        if (ball.y <= 0) {
+          ball.y = 0;
+          ball.vy = Math.abs(ball.vy);
+          playSound(bounceSound);
+        }
+
+        if (
+          ball.vy > 0 &&
+          ball.x + ball.w > paddle.x &&
+          ball.x < paddle.x + paddle.w &&
+          ball.y + ball.h >= paddle.y &&
+          ball.y + ball.h <= paddle.y + paddle.h + 8
+        ) {
+          ball.y = paddle.y - ball.h;
+          ball.vy = -Math.abs(ball.vy);
+          playSound(bounceSound);
+        }
+
+        for (const block of blocks) {
+          if (!block.alive) continue;
+          if (collideAABB(block)) {
+            block.alive = false;
+            explosions.push({
+              x: block.x,
+              y: block.y,
+              w: block.w,
+              h: block.h,
+              color: block.color,
+              elapsed: 0,
+            });
+            score += 10;
+            ball.vy = -ball.vy;
+            playSound(breakSound);
+            if (blocks.every((b) => !b.alive)) {
+              if (currentLevel < 5) loadLevel(currentLevel + 1);
+              else gameState = "win";
+            }
+            break;
+          }
+        }
+
+        for (const exp of explosions) exp.elapsed += dt * 1000;
+        explosions = explosions.filter(
+          (exp) => exp.elapsed < EXPLOSION_DURATION,
+        );
+
+        if (ball.y > H) {
+          lives--;
+          if (lives <= 0) {
+            lives = 0;
+            gameState = "gameover";
+          } else {
+            initBall();
+          }
+        }
+      }
+
       function draw() {
         const scaleX = canvas.width / W;
         const scaleY = canvas.height / H;
@@ -338,8 +470,19 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.fillRect(0, 0, W, H);
       }
 
+      loadLevel(1);
+
+      let lastTime: number | null = null;
       let rafId = 0;
-      function loop() {
+      function loop(ts: number) {
+        if (resetTimeRef.current) {
+          lastTime = null;
+          resetTimeRef.current = false;
+        }
+        const dt =
+          lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
+        lastTime = ts;
+        if (!pausedRef.current) update(dt);
         draw();
         rafId = requestAnimationFrame(loop);
       }
