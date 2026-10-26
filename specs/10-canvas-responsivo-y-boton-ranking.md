@@ -1,6 +1,6 @@
 # 10 — Canvas responsivo sin scroll y botón "ver ranking" en el modal de fin de juego
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 06, SPEC 07, SPEC 08, SPEC 09
 **Fecha:** 2026-10-25
 
@@ -59,17 +59,17 @@ Cada paso deja el proyecto en estado funcional (`npm run dev` arranca sin errore
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] En una ventana de navegador de ~1366×768 (laptop típica), jugar `asteroides`, `tetris`, `arkanoid` o `snake` muestra el HUD superior, el área de juego y la barra inferior del CRT simultáneamente, sin scroll vertical.
-- [ ] Lo mismo se cumple al entrar a un juego aún sin canvas real (pantalla decorativa placeholder), si existe alguno en el catálogo.
-- [ ] El canvas de cada uno de los 4 juegos reales mantiene su proporción exacta (4:3 para `asteroides`/`arkanoid`/`snake`, 1:2 para `tetris`) sin deformarse, tanto en ventanas angostas como anchas.
-- [ ] El modal "FIN DEL JUEGO" muestra el botón "VER RANKING" entre "JUGAR DE NUEVO" y "VOLVER AL VAULT" para los 4 juegos reales.
-- [ ] Terminar una partida de `snake` y pulsar "VER RANKING" navega a `/salon-de-la-fama?juego=snake` con la pestaña "SERPIENTE" activa de inmediato.
-- [ ] Lo mismo se cumple para `asteroides`, `tetris` y `arkanoid` con sus respectivos ids y pestañas.
-- [ ] Visitar `/salon-de-la-fama` sin query param (ej. desde el menú de navegación) sigue mostrando la pestaña del primer juego del catálogo, igual que antes de este spec.
-- [ ] Si el query param `juego` no corresponde a ningún id existente en `games`, `/salon-de-la-fama` no falla y cae de vuelta a la pestaña del primer juego.
-- [ ] `read_console_messages` no muestra errores al jugar, terminar una partida, pulsar "VER RANKING" y navegar de vuelta.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] En una ventana de navegador de ~1366×768 (laptop típica), jugar `asteroides`, `tetris`, `arkanoid` o `snake` muestra el HUD superior, el área de juego y la barra inferior del CRT simultáneamente, sin scroll vertical.
+- [x] Lo mismo se cumple al entrar a un juego aún sin canvas real (pantalla decorativa placeholder), si existe alguno en el catálogo.
+- [x] El canvas de cada uno de los 4 juegos reales mantiene su proporción exacta (4:3 para `asteroides`/`arkanoid`/`snake`, 1:2 para `tetris`) sin deformarse, tanto en ventanas angostas como anchas.
+- [x] El modal "FIN DEL JUEGO" muestra el botón "VER RANKING" entre "JUGAR DE NUEVO" y "VOLVER AL VAULT" para los 4 juegos reales.
+- [x] Terminar una partida de `snake` y pulsar "VER RANKING" navega a `/salon-de-la-fama?juego=snake` con la pestaña "SERPIENTE" activa de inmediato.
+- [x] Lo mismo se cumple para `asteroides`, `tetris` y `arkanoid` con sus respectivos ids y pestañas.
+- [x] Visitar `/salon-de-la-fama` sin query param (ej. desde el menú de navegación) sigue mostrando la pestaña del primer juego del catálogo, igual que antes de este spec.
+- [x] Si el query param `juego` no corresponde a ningún id existente en `games`, `/salon-de-la-fama` no falla y cae de vuelta a la pestaña del primer juego.
+- [x] `read_console_messages` no muestra errores al jugar, terminar una partida, pulsar "VER RANKING" y navegar de vuelta.
 
 ## Decisiones tomadas y descartadas
 
