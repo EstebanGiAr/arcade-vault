@@ -424,8 +424,15 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         logStroke: string;
       };
 
-      function zoneThemeFor(skin: GameSkin): ZoneTheme {
-        if (skin.id === "neon") {
+      // `ZoneTheme` solo depende de `skin.id` (clasico/neon/retro): se calcula
+      // una vez por skin y se cachea aquí en vez de reconstruir el objeto
+      // literal en cada `draw()`. El Map vive en el closure del efecto
+      // principal (no en un ref de React), con el mismo ciclo de vida que el
+      // resto del estado del juego.
+      const zoneThemeCache = new Map<GameSkin["id"], ZoneTheme>();
+
+      function buildZoneTheme(skinId: GameSkin["id"]): ZoneTheme {
+        if (skinId === "neon") {
           return {
             road: "#0a0a12",
             river: "#0d1733",
@@ -437,7 +444,7 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
             logStroke: "#b35a1f",
           };
         }
-        if (skin.id === "retro") {
+        if (skinId === "retro") {
           return {
             road: "#07120a",
             river: "#0a2018",
@@ -459,6 +466,15 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           goalBorder: "#d4af37",
           logStroke: "#4e3417",
         };
+      }
+
+      function zoneThemeFor(skin: GameSkin): ZoneTheme {
+        let theme = zoneThemeCache.get(skin.id);
+        if (!theme) {
+          theme = buildZoneTheme(skin.id);
+          zoneThemeCache.set(skin.id, theme);
+        }
+        return theme;
       }
 
       function zoneColor(row: number, zones: ZoneTheme): string {
