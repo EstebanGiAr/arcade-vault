@@ -185,18 +185,20 @@ export function GamePlayer({ game }: { game: Game }) {
               </select>
             </label>
           )}
-          <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
-            {paused ? "REANUDAR" : "PAUSA"}
-          </button>
-          <button className="btn magenta" onClick={endGame}>
-            FIN
-          </button>
-          <button
-            className="btn ghost"
-            onClick={() => router.push(`/juegos/${game.id}`)}
-          >
-            SALIR
-          </button>
+          <div className="hud-buttons">
+            <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+              {paused ? "REANUDAR" : "PAUSA"}
+            </button>
+            <button className="btn magenta" onClick={endGame}>
+              FIN
+            </button>
+            <button
+              className="btn ghost"
+              onClick={() => router.push(`/juegos/${game.id}`)}
+            >
+              SALIR
+            </button>
+          </div>
         </div>
       </div>
 
@@ -259,6 +261,21 @@ export function GamePlayer({ game }: { game: Game }) {
       </div>
 
       {entry && <TouchControls gameId={game.id} />}
+
+      <div className="mobile-footer-actions">
+        <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+          {paused ? "REANUDAR" : "PAUSA"}
+        </button>
+        <button className="btn magenta" onClick={endGame}>
+          FIN
+        </button>
+        <button
+          className="btn ghost"
+          onClick={() => router.push(`/juegos/${game.id}`)}
+        >
+          SALIR
+        </button>
+      </div>
 
       {over && (
         <div className="modal-bd">
