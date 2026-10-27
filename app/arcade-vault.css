@@ -1180,6 +1180,18 @@ a {
     inset 0 0 60px rgba(0, 0, 0, 0.9),
     inset 0 0 20px rgba(0, 245, 255, 0.15);
 }
+@media (max-width: 720px) and (pointer: coarse) {
+  .crt-screen {
+    max-height: min(52dvh, 620px);
+  }
+  .player-hud {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .hud-actions {
+    gap: 8px;
+  }
+}
 .crt-screen::after {
   content: "";
   position: absolute;
