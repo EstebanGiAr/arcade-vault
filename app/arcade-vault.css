@@ -1303,6 +1303,17 @@ a {
   height: 20px;
   pointer-events: none;
 }
+.touch-dpad-hub {
+  position: absolute;
+  top: 44px;
+  left: 44px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
 .touch-dpad-up {
   top: 0;
   left: 44px;

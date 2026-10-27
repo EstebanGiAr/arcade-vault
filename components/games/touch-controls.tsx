@@ -184,6 +184,9 @@ export function TouchControls({ gameId }: { gameId: string }) {
             <path d="M8 4 L20 12 L8 20 Z" fill="currentColor" />
           </svg>
         </button>
+        <div className="touch-dpad-hub" aria-hidden="true">
+          <span className="touch-dpad-gem" />
+        </div>
       </div>
       <div className="touch-actions">
         <button
