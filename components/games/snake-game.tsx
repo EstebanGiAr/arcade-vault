@@ -219,6 +219,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         prevState = gameState;
       }
 
+      let cancelled = false;
       let imgLoaded = false;
       const fruitsImg = new Image();
       fruitsImg.onload = () => {
@@ -402,6 +403,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       let lastTime: number | null = null;
       let rafId = 0;
       function loop(ts: number) {
+        if (cancelled) return;
         if (resetTimeRef.current) {
           lastTime = null;
           resetTimeRef.current = false;
@@ -420,6 +422,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         fruitsImg.addEventListener(
           "load",
           () => {
+            if (cancelled) return;
             rafId = requestAnimationFrame(loop);
           },
           { once: true },
@@ -427,6 +430,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       }
 
       return () => {
+        cancelled = true;
         cancelAnimationFrame(rafId);
         resizeObserver.disconnect();
         window.removeEventListener("keydown", onKeyDown);

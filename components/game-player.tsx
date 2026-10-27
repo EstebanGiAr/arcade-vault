@@ -13,6 +13,7 @@ import { saveScore } from "@/lib/scores";
 import { createClient } from "@/lib/supabase/client";
 import { readSkin, writeSkin } from "@/lib/storage";
 import { useAuth } from "@/components/auth-provider";
+import { TouchControls } from "@/components/games/touch-controls";
 import {
   GAME_REGISTRY,
   type ArcadeGameHandle,
@@ -184,30 +185,35 @@ export function GamePlayer({ game }: { game: Game }) {
               </select>
             </label>
           )}
-          <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
-            {paused ? "REANUDAR" : "PAUSA"}
-          </button>
-          <button className="btn magenta" onClick={endGame}>
-            FIN
-          </button>
-          <button
-            className="btn ghost"
-            onClick={() => router.push(`/juegos/${game.id}`)}
-          >
-            SALIR
-          </button>
+          <div className="hud-buttons">
+            <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+              {paused ? "REANUDAR" : "PAUSA"}
+            </button>
+            <button className="btn magenta" onClick={endGame}>
+              FIN
+            </button>
+            <button
+              className="btn ghost"
+              onClick={() => router.push(`/juegos/${game.id}`)}
+            >
+              SALIR
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="crt">
         <div
           className="crt-screen"
-          style={{
-            aspectRatio: entry?.aspectRatio ?? "4 / 3",
-            width: "100%",
-            maxWidth: `min(100%, calc(min(70dvh, 760px) * ${parseAspectRatio(entry?.aspectRatio ?? "4 / 3")}))`,
-            margin: "0 auto",
-          }}
+          style={
+            {
+              aspectRatio: entry?.aspectRatio ?? "4 / 3",
+              width: "100%",
+              maxWidth: `min(100%, calc(min(70dvh, 760px) * ${parseAspectRatio(entry?.aspectRatio ?? "4 / 3")}))`,
+              margin: "0 auto",
+              "--crt-ratio": parseAspectRatio(entry?.aspectRatio ?? "4 / 3"),
+            } as CSSProperties
+          }
         >
           {entry ? (
             <entry.component
@@ -255,6 +261,23 @@ export function GamePlayer({ game }: { game: Game }) {
           <span>{game.title} · CRT-83 · 60 HZ</span>
           <span>CARGA · 1MB</span>
         </div>
+      </div>
+
+      {entry && <TouchControls gameId={game.id} />}
+
+      <div className="mobile-footer-actions">
+        <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+          {paused ? "REANUDAR" : "PAUSA"}
+        </button>
+        <button className="btn magenta" onClick={endGame}>
+          FIN
+        </button>
+        <button
+          className="btn ghost"
+          onClick={() => router.push(`/juegos/${game.id}`)}
+        >
+          SALIR
+        </button>
       </div>
 
       {over && (
