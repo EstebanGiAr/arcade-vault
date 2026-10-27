@@ -7,6 +7,7 @@ import type {
   ArcadeGameProps,
   ArcadeStats,
 } from "@/components/games/registry";
+import { setupResponsiveCanvas } from "@/components/games/canvas";
 import { hexToRgba, type GameSkin } from "@/components/games/skins";
 
 const W = 800;
@@ -51,15 +52,10 @@ class Bullet {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D, skin: GameSkin) {
-    ctx.save();
-    ctx.shadowBlur = skin.glow;
-    ctx.shadowColor = skin.ink;
-    ctx.fillStyle = skin.ink;
+  draw(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
   }
 }
 
@@ -375,23 +371,7 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       if (!maybeCtx) return;
       const ctx: CanvasRenderingContext2D = maybeCtx;
 
-      let pixelWidth = 0;
-      let pixelHeight = 0;
-      function resizeCanvasToContainer() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = container.getBoundingClientRect();
-        const newWidth = Math.max(1, Math.round(rect.width * dpr));
-        const newHeight = Math.max(1, Math.round(rect.height * dpr));
-        if (newWidth !== pixelWidth || newHeight !== pixelHeight) {
-          pixelWidth = newWidth;
-          pixelHeight = newHeight;
-          canvas.width = newWidth;
-          canvas.height = newHeight;
-        }
-      }
-      resizeCanvasToContainer();
-      const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
-      resizeObserver.observe(container);
+      const disconnectResize = setupResponsiveCanvas(container, canvas);
 
       const keys: Record<string, boolean> = {};
       const justPressed: Record<string, boolean> = {};
@@ -421,10 +401,16 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       window.addEventListener("keyup", onKeyUp);
 
       let ship = new Ship();
-      let bullets: Bullet[] = [];
-      let asteroids: Asteroid[] = [];
-      let particles: Particle[] = [];
-      let powerUps: PowerUp[] = [];
+      const bullets: Bullet[] = [];
+      const asteroids: Asteroid[] = [];
+      const particles: Particle[] = [];
+      const powerUps: PowerUp[] = [];
+
+      function removeDead<T extends { dead: boolean }>(arr: T[]) {
+        for (let i = arr.length - 1; i >= 0; i--) {
+          if (arr[i].dead) arr.splice(i, 1);
+        }
+      }
       let score = 0;
       let lives = 3;
       let level = 1;
@@ -452,10 +438,10 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       function initGame() {
         ship = new Ship();
-        bullets = [];
-        asteroids = [];
-        particles = [];
-        powerUps = [];
+        bullets.length = 0;
+        asteroids.length = 0;
+        particles.length = 0;
+        powerUps.length = 0;
         powerUpSpawned = false;
         killsSinceSpawn = 0;
         score = 0;
@@ -467,9 +453,9 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       function nextLevel() {
         level++;
-        bullets = [];
-        particles = [];
-        powerUps = [];
+        bullets.length = 0;
+        particles.length = 0;
+        powerUps.length = 0;
         powerUpSpawned = false;
         killsSinceSpawn = 0;
         ship.reset();
@@ -496,14 +482,14 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         if (state === "gameover") {
           // El reinicio solo ocurre vía restart() invocado desde React, para evitar reinicios duplicados.
           particles.forEach((p) => p.update(dt));
-          particles = particles.filter((p) => !p.dead);
+          removeDead(particles);
           return;
         }
 
         if (state === "dead") {
           deadTimer -= dt;
           particles.forEach((p) => p.update(dt));
-          particles = particles.filter((p) => !p.dead);
+          removeDead(particles);
           asteroids.forEach((a) => a.update(dt));
           if (deadTimer <= 0) {
             state = "playing";
@@ -522,9 +508,9 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         particles.forEach((p) => p.update(dt));
         powerUps.forEach((p) => p.update(dt));
 
-        bullets = bullets.filter((b) => !b.dead);
-        particles = particles.filter((p) => !p.dead);
-        powerUps = powerUps.filter((p) => !p.dead);
+        removeDead(bullets);
+        removeDead(particles);
+        removeDead(powerUps);
 
         for (const p of powerUps) {
           if (!p.dead && dist(ship, p) < ship.radius + p.radius) {
@@ -554,8 +540,9 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
             }
           }
         }
-        asteroids = asteroids.filter((a) => !a.dead).concat(newAsteroids);
-        bullets = bullets.filter((b) => !b.dead);
+        removeDead(asteroids);
+        asteroids.push(...newAsteroids);
+        removeDead(bullets);
 
         // Nave vs asteroide
         if (ship.invincible <= 0) {
@@ -575,8 +562,6 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(-Math.PI / 2);
-        ctx.shadowBlur = skin.glow;
-        ctx.shadowColor = skin.ink;
         ctx.strokeStyle = skin.ink;
         ctx.lineWidth = 1.2;
         ctx.lineJoin = "round";
@@ -600,7 +585,13 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.textAlign = "center";
         ctx.fillText(`NIVEL ${level}`, W / 2, 26);
 
+        // Las vidas comparten el mismo color: el shadow se configura una
+        // sola vez para el grupo en vez de por vida.
+        ctx.save();
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = skin.ink;
         for (let i = 0; i < lives; i++) drawLifeIcon(W - 16 - i * 22, 18, skin);
+        ctx.restore();
 
         if (ship.tripleShot > 0) {
           ctx.textAlign = "left";
@@ -654,7 +645,16 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         particles.forEach((p) => p.draw(ctx, skin));
         asteroids.forEach((a) => a.draw(ctx, skin));
         powerUps.forEach((p) => p.draw(ctx, skin));
-        bullets.forEach((b) => b.draw(ctx, skin));
+
+        // Las balas comparten el mismo color: el shadow se configura una
+        // sola vez para el grupo en vez de por bala.
+        ctx.save();
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = skin.ink;
+        ctx.fillStyle = skin.ink;
+        bullets.forEach((b) => b.draw(ctx));
+        ctx.restore();
+
         ship.draw(ctx, skin);
 
         drawHUD(skin);
@@ -695,7 +695,7 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       return () => {
         cancelAnimationFrame(rafId);
-        resizeObserver.disconnect();
+        disconnectResize();
         window.removeEventListener("keydown", onKeyDown);
         window.removeEventListener("keyup", onKeyUp);
       };

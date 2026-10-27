@@ -7,6 +7,7 @@ import type {
   ArcadeGameProps,
   ArcadeStats,
 } from "@/components/games/registry";
+import { setupResponsiveCanvas } from "@/components/games/canvas";
 import { hexToRgba, type GameSkin } from "@/components/games/skins";
 
 const W = 800;
@@ -168,23 +169,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       if (!maybeCtx) return;
       const ctx: CanvasRenderingContext2D = maybeCtx;
 
-      let pixelWidth = 0;
-      let pixelHeight = 0;
-      function resizeCanvasToContainer() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = container.getBoundingClientRect();
-        const newWidth = Math.max(1, Math.round(rect.width * dpr));
-        const newHeight = Math.max(1, Math.round(rect.height * dpr));
-        if (newWidth !== pixelWidth || newHeight !== pixelHeight) {
-          pixelWidth = newWidth;
-          pixelHeight = newHeight;
-          canvas.width = newWidth;
-          canvas.height = newHeight;
-        }
-      }
-      resizeCanvasToContainer();
-      const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
-      resizeObserver.observe(container);
+      const disconnectResize = setupResponsiveCanvas(container, canvas);
 
       let direction: Direction = "right";
       let pendingDirection: Direction | null = null;
@@ -354,15 +339,28 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.fillStyle = skin.bg;
         ctx.fillRect(0, 0, W, H);
 
-        snake.forEach((cell, index) => {
-          const color = index === 0 ? skin.accent : skin.accentAlt;
+        // La cabeza y el cuerpo comparten color dentro de su propio grupo:
+        // el shadow se configura una sola vez por grupo en vez de por celda.
+        if (snake.length > 0) {
+          const head = snake[0];
           ctx.save();
           ctx.shadowBlur = skin.glow;
-          ctx.shadowColor = color;
-          ctx.fillStyle = color;
-          ctx.fillRect(cell.col * CELL, cell.row * CELL, CELL - 1, CELL - 1);
+          ctx.shadowColor = skin.accent;
+          ctx.fillStyle = skin.accent;
+          ctx.fillRect(head.col * CELL, head.row * CELL, CELL - 1, CELL - 1);
           ctx.restore();
-        });
+        }
+        if (snake.length > 1) {
+          ctx.save();
+          ctx.shadowBlur = skin.glow;
+          ctx.shadowColor = skin.accentAlt;
+          ctx.fillStyle = skin.accentAlt;
+          for (let i = 1; i < snake.length; i++) {
+            const cell = snake[i];
+            ctx.fillRect(cell.col * CELL, cell.row * CELL, CELL - 1, CELL - 1);
+          }
+          ctx.restore();
+        }
 
         if (imgLoaded) {
           const frame = FRUITS[fruit.kind];
@@ -432,7 +430,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       return () => {
         cancelled = true;
         cancelAnimationFrame(rafId);
-        resizeObserver.disconnect();
+        disconnectResize();
         window.removeEventListener("keydown", onKeyDown);
       };
     }, []);
