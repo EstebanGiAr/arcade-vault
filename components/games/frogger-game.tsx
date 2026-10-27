@@ -468,16 +468,14 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         return zones.road;
       }
 
-      function drawZones(skin: GameSkin) {
-        const zones = zoneThemeFor(skin);
+      function drawZones(zones: ZoneTheme) {
         for (let row = 0; row < ROWS; row++) {
           ctx.fillStyle = zoneColor(row, zones);
           ctx.fillRect(0, row * CELL, CANVAS_W, CELL);
         }
       }
 
-      function drawGoals(skin: GameSkin) {
-        const zones = zoneThemeFor(skin);
+      function drawGoals(skin: GameSkin, zones: ZoneTheme) {
         for (let i = 0; i < GOAL_RANGES.length; i++) {
           const [a, b] = GOAL_RANGES[i];
           const x = a * CELL;
@@ -487,19 +485,28 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           ctx.strokeStyle = zones.goalBorder;
           ctx.lineWidth = 2;
           ctx.strokeRect(x + 1, ROW_GOALS * CELL + 1, w - 2, CELL - 2);
-          if (goals[i]) {
-            drawFrogShape(
-              x + w / 2,
-              ROW_GOALS * CELL + CELL / 2,
-              skin.accentAlt,
-              skin,
-            );
-          }
         }
+
+        // Las metas ocupadas comparten el mismo color de ícono: el shadow se
+        // configura una sola vez para el grupo en vez de por meta.
+        ctx.save();
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = skin.accentAlt;
+        for (let i = 0; i < GOAL_RANGES.length; i++) {
+          if (!goals[i]) continue;
+          const [a, b] = GOAL_RANGES[i];
+          const x = a * CELL;
+          const w = (b - a + 1) * CELL;
+          drawFrogShapeBody(
+            x + w / 2,
+            ROW_GOALS * CELL + CELL / 2,
+            skin.accentAlt,
+          );
+        }
+        ctx.restore();
       }
 
-      function drawEntities(skin: GameSkin) {
-        const zones = zoneThemeFor(skin);
+      function drawEntities(skin: GameSkin, zones: ZoneTheme) {
         const [carColor, truckColor, logColor, turtleColor] = skin.entities;
         for (const lane of lanes) {
           for (const e of lane.entities) {
@@ -545,16 +552,12 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         }
       }
 
-      function drawFrogShape(
+      function drawFrogShapeBody(
         cx: number,
         cy: number,
         color: string,
-        skin: GameSkin,
         legsOut = false,
       ) {
-        ctx.save();
-        ctx.shadowBlur = skin.glow;
-        ctx.shadowColor = color;
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.ellipse(cx, cy, 14, 12, 0, 0, Math.PI * 2);
@@ -573,6 +576,19 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.arc(cx - 5, cy - 6, 1.3, 0, Math.PI * 2);
         ctx.arc(cx + 5, cy - 6, 1.3, 0, Math.PI * 2);
         ctx.fill();
+      }
+
+      function drawFrogShape(
+        cx: number,
+        cy: number,
+        color: string,
+        skin: GameSkin,
+        legsOut = false,
+      ) {
+        ctx.save();
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = color;
+        drawFrogShapeBody(cx, cy, color, legsOut);
         ctx.restore();
       }
 
@@ -606,10 +622,16 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
         const iconSize = 16;
         const spacing = 4;
+        // Las vidas comparten el mismo color de ícono: el shadow se
+        // configura una sola vez para el grupo en vez de por vida.
+        ctx.save();
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = skin.accent;
         for (let i = 0; i < lives; i++) {
           const bx = CANVAS_W - 14 - (lives - i) * (iconSize + spacing);
-          drawFrogShape(bx, 8, skin.accent, skin);
+          drawFrogShapeBody(bx, 8, skin.accent);
         }
+        ctx.restore();
 
         const timeFrac = Math.max(
           0,
@@ -639,12 +661,13 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       function draw() {
         const skin = skinRef.current;
+        const zones = zoneThemeFor(skin);
         const scaleX = canvas.width / CANVAS_W;
         const scaleY = canvas.height / CANVAS_H;
         ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
-        drawZones(skin);
-        drawEntities(skin);
-        drawGoals(skin);
+        drawZones(zones);
+        drawEntities(skin, zones);
+        drawGoals(skin, zones);
         drawFrog(skin);
         drawHud(skin);
         if (gameState === "gameover") drawOverlay(skin, "GAME OVER");
