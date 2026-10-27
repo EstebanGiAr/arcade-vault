@@ -1,6 +1,6 @@
 # 13 — Performance de render en los juegos del catálogo
 
-**Estado:** Aprobado
+**Estado:** Implementada
 **Depende de:** SPEC 05, SPEC 07, SPEC 08, SPEC 09
 **Fecha:** 2026-10-27
 
@@ -45,16 +45,16 @@ Cada paso deja el proyecto funcional (`npm run dev` arranca sin errores).
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] `components/games/canvas.ts` existe y los 5 juegos lo usan; ninguno conserva su copia local de `resizeCanvasToContainer`.
-- [ ] El DPR efectivo usado para dimensionar el canvas nunca supera 2, incluso en una pantalla reportando `devicePixelRatio` mayor.
-- [ ] En frogger, `zoneThemeFor(skin)` se invoca una sola vez por `draw()`, no tres.
-- [ ] Jugando cada uno de los 5 juegos en Chrome con las 3 skins, el resultado visual (colores, glow, nitidez) es indistinguible del comportamiento previo a este spec.
-- [ ] En `asteroids-game.tsx`, ninguno de los arrays `particles`/`bullets`/`asteroids`/`powerUps` se reasigna por frame vía `.filter(...)`; la eliminación de elementos muertos es in-place.
-- [ ] Un perfil de Chrome DevTools Performance de ~10s en frogger (skin neon, varias metas ocupadas) no muestra caídas sostenidas por debajo de ~55-60fps.
-- [ ] Un perfil de Chrome DevTools Performance de ~10s en asteroids durante una explosión grande no muestra caídas sostenidas por debajo de ~55-60fps ni picos de GC asociados a los arrays migrados.
-- [ ] El comportamiento funcional de los 5 juegos (reglas, puntuación, colisiones, velocidades) es idéntico al previo a este spec.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] `components/games/canvas.ts` existe y los 5 juegos lo usan; ninguno conserva su copia local de `resizeCanvasToContainer`.
+- [x] El DPR efectivo usado para dimensionar el canvas nunca supera 2, incluso en una pantalla reportando `devicePixelRatio` mayor.
+- [x] En frogger, `zoneThemeFor(skin)` se invoca una sola vez por `draw()`, no tres.
+- [x] Jugando cada uno de los 5 juegos en Chrome con las 3 skins, el resultado visual (colores, glow, nitidez) es indistinguible del comportamiento previo a este spec.
+- [x] En `asteroids-game.tsx`, ninguno de los arrays `particles`/`bullets`/`asteroids`/`powerUps` se reasigna por frame vía `.filter(...)`; la eliminación de elementos muertos es in-place.
+- [x] Un perfil de Chrome DevTools Performance de ~10s en frogger (skin neon, varias metas ocupadas) no muestra caídas sostenidas por debajo de ~55-60fps.
+- [x] Un perfil de Chrome DevTools Performance de ~10s en asteroids durante una explosión grande no muestra caídas sostenidas por debajo de ~55-60fps ni picos de GC asociados a los arrays migrados.
+- [x] El comportamiento funcional de los 5 juegos (reglas, puntuación, colisiones, velocidades) es idéntico al previo a este spec.
 
 ## Decisiones tomadas y descartadas
 
