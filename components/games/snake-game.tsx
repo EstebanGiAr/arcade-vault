@@ -339,15 +339,28 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.fillStyle = skin.bg;
         ctx.fillRect(0, 0, W, H);
 
-        snake.forEach((cell, index) => {
-          const color = index === 0 ? skin.accent : skin.accentAlt;
+        // La cabeza y el cuerpo comparten color dentro de su propio grupo:
+        // el shadow se configura una sola vez por grupo en vez de por celda.
+        if (snake.length > 0) {
+          const head = snake[0];
           ctx.save();
           ctx.shadowBlur = skin.glow;
-          ctx.shadowColor = color;
-          ctx.fillStyle = color;
-          ctx.fillRect(cell.col * CELL, cell.row * CELL, CELL - 1, CELL - 1);
+          ctx.shadowColor = skin.accent;
+          ctx.fillStyle = skin.accent;
+          ctx.fillRect(head.col * CELL, head.row * CELL, CELL - 1, CELL - 1);
           ctx.restore();
-        });
+        }
+        if (snake.length > 1) {
+          ctx.save();
+          ctx.shadowBlur = skin.glow;
+          ctx.shadowColor = skin.accentAlt;
+          ctx.fillStyle = skin.accentAlt;
+          for (let i = 1; i < snake.length; i++) {
+            const cell = snake[i];
+            ctx.fillRect(cell.col * CELL, cell.row * CELL, CELL - 1, CELL - 1);
+          }
+          ctx.restore();
+        }
 
         if (imgLoaded) {
           const frame = FRUITS[fruit.kind];

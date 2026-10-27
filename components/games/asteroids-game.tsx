@@ -52,15 +52,10 @@ class Bullet {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D, skin: GameSkin) {
-    ctx.save();
-    ctx.shadowBlur = skin.glow;
-    ctx.shadowColor = skin.ink;
-    ctx.fillStyle = skin.ink;
+  draw(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
   }
 }
 
@@ -560,8 +555,6 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(-Math.PI / 2);
-        ctx.shadowBlur = skin.glow;
-        ctx.shadowColor = skin.ink;
         ctx.strokeStyle = skin.ink;
         ctx.lineWidth = 1.2;
         ctx.lineJoin = "round";
@@ -585,7 +578,13 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.textAlign = "center";
         ctx.fillText(`NIVEL ${level}`, W / 2, 26);
 
+        // Las vidas comparten el mismo color: el shadow se configura una
+        // sola vez para el grupo en vez de por vida.
+        ctx.save();
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = skin.ink;
         for (let i = 0; i < lives; i++) drawLifeIcon(W - 16 - i * 22, 18, skin);
+        ctx.restore();
 
         if (ship.tripleShot > 0) {
           ctx.textAlign = "left";
@@ -639,7 +638,16 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         particles.forEach((p) => p.draw(ctx, skin));
         asteroids.forEach((a) => a.draw(ctx, skin));
         powerUps.forEach((p) => p.draw(ctx, skin));
-        bullets.forEach((b) => b.draw(ctx, skin));
+
+        // Las balas comparten el mismo color: el shadow se configura una
+        // sola vez para el grupo en vez de por bala.
+        ctx.save();
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = skin.ink;
+        ctx.fillStyle = skin.ink;
+        bullets.forEach((b) => b.draw(ctx));
+        ctx.restore();
+
         ship.draw(ctx, skin);
 
         drawHUD(skin);
