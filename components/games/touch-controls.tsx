@@ -193,7 +193,7 @@ export function TouchControls({ gameId }: { gameId: string }) {
       <div className="touch-actions">
         <button
           type="button"
-          className="touch-btn touch-btn-round"
+          className="touch-btn touch-btn-round touch-btn-a"
           aria-label="Botón A"
           data-position="a"
           onTouchStart={handleTouchStart}
@@ -204,7 +204,7 @@ export function TouchControls({ gameId }: { gameId: string }) {
         </button>
         <button
           type="button"
-          className="touch-btn touch-btn-round"
+          className="touch-btn touch-btn-round touch-btn-b"
           aria-label="Botón B"
           data-position="b"
           onTouchStart={handleTouchStart}
