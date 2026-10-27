@@ -2,6 +2,7 @@ import type { ComponentType, RefAttributes } from "react";
 
 import { ArkanoidGame } from "@/components/games/arkanoid-game";
 import { AsteroidsGame } from "@/components/games/asteroids-game";
+import { FroggerGame } from "@/components/games/frogger-game";
 import { SnakeGame } from "@/components/games/snake-game";
 import { TetrisGame } from "@/components/games/tetris-game";
 import type { GameSkin, SkinId } from "@/components/games/skins";
@@ -114,6 +115,12 @@ export const GAME_REGISTRY: Record<string, ArcadeGameEntry> = {
           "grayscale(1) sepia(1) hue-rotate(75deg) saturate(5) brightness(0.9) contrast(1.1)",
       },
     },
+  },
+  frogger: {
+    component: FroggerGame,
+    hudStats: ["score", "lives", "level"],
+    initialStats: { score: 0, lives: 3, level: 1 },
+    aspectRatio: "8 / 7",
   },
   snake: {
     component: SnakeGame,
