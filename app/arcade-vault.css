@@ -1063,6 +1063,28 @@ a {
   align-items: center;
   flex-wrap: wrap;
 }
+.hud-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.mobile-footer-actions {
+  display: none;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+@media (max-width: 720px) and (pointer: coarse) {
+  .hud-buttons {
+    display: none;
+  }
+  .mobile-footer-actions {
+    display: flex;
+  }
+}
 
 /* Selector de skin (clasico / neon / retro), port de .gp-themer/.swatch del prototipo */
 .skin-picker {
