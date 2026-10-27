@@ -13,6 +13,7 @@ import { saveScore } from "@/lib/scores";
 import { createClient } from "@/lib/supabase/client";
 import { readSkin, writeSkin } from "@/lib/storage";
 import { useAuth } from "@/components/auth-provider";
+import { TouchControls } from "@/components/games/touch-controls";
 import {
   GAME_REGISTRY,
   type ArcadeGameHandle,
@@ -256,6 +257,8 @@ export function GamePlayer({ game }: { game: Game }) {
           <span>CARGA · 1MB</span>
         </div>
       </div>
+
+      {entry && <TouchControls gameId={game.id} />}
 
       {over && (
         <div className="modal-bd">
