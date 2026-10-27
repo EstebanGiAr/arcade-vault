@@ -69,6 +69,7 @@ export function TouchControls({ gameId }: { gameId: string }) {
   const handleTouchStart = useCallback(
     (e: TouchEvent<HTMLButtonElement>) => {
       e.preventDefault();
+      e.currentTarget.classList.add("touch-btn-pressed");
       const position = e.currentTarget.dataset.position as TouchPosition;
       const mapping = config?.[position];
       if (!mapping) return;
@@ -91,6 +92,7 @@ export function TouchControls({ gameId }: { gameId: string }) {
 
   const handleTouchEnd = useCallback(
     (e: TouchEvent<HTMLButtonElement>) => {
+      e.currentTarget.classList.remove("touch-btn-pressed");
       const position = e.currentTarget.dataset.position as TouchPosition;
       const mapping = config?.[position];
       if (!mapping) return;
