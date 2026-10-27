@@ -1,6 +1,6 @@
 "use client";
 
-import type { TouchEvent } from "react";
+import { useCallback, useRef, type TouchEvent } from "react";
 
 type TouchKeyMap = {
   code: string;
@@ -63,26 +63,49 @@ type TouchPosition = "up" | "down" | "left" | "right" | "a" | "b";
 
 export function TouchControls({ gameId }: { gameId: string }) {
   const config = TOUCH_CONTROLS[gameId];
+  const timeoutsRef = useRef<Record<string, number>>({});
+  const intervalsRef = useRef<Record<string, number>>({});
+
+  const handleTouchStart = useCallback(
+    (e: TouchEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      const position = e.currentTarget.dataset.position as TouchPosition;
+      const mapping = config?.[position];
+      if (!mapping) return;
+      dispatchKey("keydown", mapping.code, mapping.key);
+      if (mapping.repeat) {
+        timeoutsRef.current[position] = window.setTimeout(() => {
+          intervalsRef.current[position] = window.setInterval(() => {
+            dispatchKey("keydown", mapping.code, mapping.key);
+          }, TOUCH_REPEAT_INTERVAL_MS);
+        }, TOUCH_REPEAT_DELAY_MS);
+      }
+    },
+    [config],
+  );
+
+  const handleTouchEnd = useCallback(
+    (e: TouchEvent<HTMLButtonElement>) => {
+      const position = e.currentTarget.dataset.position as TouchPosition;
+      const mapping = config?.[position];
+      if (!mapping) return;
+      const timeoutId = timeoutsRef.current[position];
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+        delete timeoutsRef.current[position];
+      }
+      const intervalId = intervalsRef.current[position];
+      if (intervalId !== undefined) {
+        window.clearInterval(intervalId);
+        delete intervalsRef.current[position];
+      }
+      dispatchKey("keyup", mapping.code, mapping.key);
+    },
+    [config],
+  );
 
   if (!config) {
     return null;
-  }
-
-  function handleTouchStart(position: TouchPosition) {
-    return (e: TouchEvent) => {
-      e.preventDefault();
-      const mapping = config[position];
-      if (!mapping) return;
-      dispatchKey("keydown", mapping.code, mapping.key);
-    };
-  }
-
-  function handleTouchEnd(position: TouchPosition) {
-    return () => {
-      const mapping = config[position];
-      if (!mapping) return;
-      dispatchKey("keyup", mapping.code, mapping.key);
-    };
   }
 
   return (
@@ -92,33 +115,37 @@ export function TouchControls({ gameId }: { gameId: string }) {
           type="button"
           className="touch-btn touch-dpad-up"
           aria-label="Arriba"
-          onTouchStart={handleTouchStart("up")}
-          onTouchEnd={handleTouchEnd("up")}
-          onTouchCancel={handleTouchEnd("up")}
+          data-position="up"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         />
         <button
           type="button"
           className="touch-btn touch-dpad-down"
           aria-label="Abajo"
-          onTouchStart={handleTouchStart("down")}
-          onTouchEnd={handleTouchEnd("down")}
-          onTouchCancel={handleTouchEnd("down")}
+          data-position="down"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         />
         <button
           type="button"
           className="touch-btn touch-dpad-left"
           aria-label="Izquierda"
-          onTouchStart={handleTouchStart("left")}
-          onTouchEnd={handleTouchEnd("left")}
-          onTouchCancel={handleTouchEnd("left")}
+          data-position="left"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         />
         <button
           type="button"
           className="touch-btn touch-dpad-right"
           aria-label="Derecha"
-          onTouchStart={handleTouchStart("right")}
-          onTouchEnd={handleTouchEnd("right")}
-          onTouchCancel={handleTouchEnd("right")}
+          data-position="right"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         />
       </div>
       <div className="touch-actions">
@@ -126,9 +153,10 @@ export function TouchControls({ gameId }: { gameId: string }) {
           type="button"
           className="touch-btn touch-btn-round"
           aria-label="Botón A"
-          onTouchStart={handleTouchStart("a")}
-          onTouchEnd={handleTouchEnd("a")}
-          onTouchCancel={handleTouchEnd("a")}
+          data-position="a"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
           A
         </button>
@@ -136,9 +164,10 @@ export function TouchControls({ gameId }: { gameId: string }) {
           type="button"
           className="touch-btn touch-btn-round"
           aria-label="Botón B"
-          onTouchStart={handleTouchStart("b")}
-          onTouchEnd={handleTouchEnd("b")}
-          onTouchCancel={handleTouchEnd("b")}
+          data-position="b"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
           B
         </button>
