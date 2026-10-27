@@ -53,6 +53,14 @@ const TOUCH_CONTROLS: Record<string, TouchDirectionsConfig> = {
     a: null,
     b: null,
   },
+  frogger: {
+    up: { code: "ArrowUp", key: "ArrowUp", repeat: true },
+    down: { code: "ArrowDown", key: "ArrowDown", repeat: true },
+    left: { code: "ArrowLeft", key: "ArrowLeft", repeat: true },
+    right: { code: "ArrowRight", key: "ArrowRight", repeat: true },
+    a: null,
+    b: null,
+  },
 };
 
 function dispatchKey(type: "keydown" | "keyup", code: string, key: string) {
