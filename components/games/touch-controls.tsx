@@ -69,6 +69,7 @@ export function TouchControls({ gameId }: { gameId: string }) {
   const handleTouchStart = useCallback(
     (e: TouchEvent<HTMLButtonElement>) => {
       e.preventDefault();
+      e.currentTarget.classList.add("touch-btn-pressed");
       const position = e.currentTarget.dataset.position as TouchPosition;
       const mapping = config?.[position];
       if (!mapping) return;
@@ -91,6 +92,7 @@ export function TouchControls({ gameId }: { gameId: string }) {
 
   const handleTouchEnd = useCallback(
     (e: TouchEvent<HTMLButtonElement>) => {
+      e.currentTarget.classList.remove("touch-btn-pressed");
       const position = e.currentTarget.dataset.position as TouchPosition;
       const mapping = config?.[position];
       if (!mapping) return;
@@ -124,7 +126,15 @@ export function TouchControls({ gameId }: { gameId: string }) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-        />
+        >
+          <svg
+            className="touch-dpad-arrow"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M12 4 L20 16 L4 16 Z" fill="currentColor" />
+          </svg>
+        </button>
         <button
           type="button"
           className="touch-btn touch-dpad-down"
@@ -133,7 +143,15 @@ export function TouchControls({ gameId }: { gameId: string }) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-        />
+        >
+          <svg
+            className="touch-dpad-arrow"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M4 8 L20 8 L12 20 Z" fill="currentColor" />
+          </svg>
+        </button>
         <button
           type="button"
           className="touch-btn touch-dpad-left"
@@ -142,7 +160,15 @@ export function TouchControls({ gameId }: { gameId: string }) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-        />
+        >
+          <svg
+            className="touch-dpad-arrow"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M16 4 L16 20 L4 12 Z" fill="currentColor" />
+          </svg>
+        </button>
         <button
           type="button"
           className="touch-btn touch-dpad-right"
@@ -151,12 +177,23 @@ export function TouchControls({ gameId }: { gameId: string }) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-        />
+        >
+          <svg
+            className="touch-dpad-arrow"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M8 4 L20 12 L8 20 Z" fill="currentColor" />
+          </svg>
+        </button>
+        <div className="touch-dpad-hub" aria-hidden="true">
+          <span className="touch-dpad-gem" />
+        </div>
       </div>
       <div className="touch-actions">
         <button
           type="button"
-          className="touch-btn touch-btn-round"
+          className="touch-btn touch-btn-round touch-btn-a"
           aria-label="Botón A"
           data-position="a"
           onTouchStart={handleTouchStart}
@@ -167,7 +204,7 @@ export function TouchControls({ gameId }: { gameId: string }) {
         </button>
         <button
           type="button"
-          className="touch-btn touch-btn-round"
+          className="touch-btn touch-btn-round touch-btn-b"
           aria-label="Botón B"
           data-position="b"
           onTouchStart={handleTouchStart}
