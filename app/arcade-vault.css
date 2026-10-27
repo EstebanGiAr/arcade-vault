@@ -1182,7 +1182,10 @@ a {
 }
 @media (max-width: 720px) and (pointer: coarse) {
   .crt-screen {
-    max-height: min(52dvh, 620px);
+    max-width: min(
+      100%,
+      calc(min(52dvh, 620px) * var(--crt-ratio, 1.333))
+    ) !important;
   }
   .player-hud {
     padding: 10px 14px;
@@ -1268,6 +1271,8 @@ a {
 .touch-btn {
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
   user-select: none;
   background: rgba(0, 245, 255, 0.06);
   border: 1px solid var(--cyan);

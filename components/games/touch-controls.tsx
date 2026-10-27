@@ -30,11 +30,11 @@ const TOUCH_CONTROLS: Record<string, TouchDirectionsConfig> = {
     b: null,
   },
   tetris: {
-    up: { code: "ArrowUp", key: "ArrowUp" },
+    up: { code: "Space", key: " " },
     down: { code: "ArrowDown", key: "ArrowDown", repeat: true },
     left: { code: "ArrowLeft", key: "ArrowLeft", repeat: true },
     right: { code: "ArrowRight", key: "ArrowRight", repeat: true },
-    a: { code: "Space", key: " " },
+    a: { code: "ArrowUp", key: "ArrowUp" },
     b: null,
   },
   arkanoid: {
@@ -76,7 +76,12 @@ export function TouchControls({ gameId }: { gameId: string }) {
       if (mapping.repeat) {
         timeoutsRef.current[position] = window.setTimeout(() => {
           intervalsRef.current[position] = window.setInterval(() => {
+            // keydown + keyup por cada tick (no solo keydown) para que los
+            // juegos con lectura por flanco (ej. disparo de asteroides, que
+            // solo reacciona a keydown tras un keyup previo) también repitan
+            // la acción mientras se mantiene presionado el botón táctil.
             dispatchKey("keydown", mapping.code, mapping.key);
+            dispatchKey("keyup", mapping.code, mapping.key);
           }, TOUCH_REPEAT_INTERVAL_MS);
         }, TOUCH_REPEAT_DELAY_MS);
       }
