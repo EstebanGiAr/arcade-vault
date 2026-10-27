@@ -401,10 +401,16 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       window.addEventListener("keyup", onKeyUp);
 
       let ship = new Ship();
-      let bullets: Bullet[] = [];
-      let asteroids: Asteroid[] = [];
-      let particles: Particle[] = [];
-      let powerUps: PowerUp[] = [];
+      const bullets: Bullet[] = [];
+      const asteroids: Asteroid[] = [];
+      const particles: Particle[] = [];
+      const powerUps: PowerUp[] = [];
+
+      function removeDead<T extends { dead: boolean }>(arr: T[]) {
+        for (let i = arr.length - 1; i >= 0; i--) {
+          if (arr[i].dead) arr.splice(i, 1);
+        }
+      }
       let score = 0;
       let lives = 3;
       let level = 1;
@@ -432,10 +438,10 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       function initGame() {
         ship = new Ship();
-        bullets = [];
-        asteroids = [];
-        particles = [];
-        powerUps = [];
+        bullets.length = 0;
+        asteroids.length = 0;
+        particles.length = 0;
+        powerUps.length = 0;
         powerUpSpawned = false;
         killsSinceSpawn = 0;
         score = 0;
@@ -447,9 +453,9 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       function nextLevel() {
         level++;
-        bullets = [];
-        particles = [];
-        powerUps = [];
+        bullets.length = 0;
+        particles.length = 0;
+        powerUps.length = 0;
         powerUpSpawned = false;
         killsSinceSpawn = 0;
         ship.reset();
@@ -476,14 +482,14 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         if (state === "gameover") {
           // El reinicio solo ocurre vía restart() invocado desde React, para evitar reinicios duplicados.
           particles.forEach((p) => p.update(dt));
-          particles = particles.filter((p) => !p.dead);
+          removeDead(particles);
           return;
         }
 
         if (state === "dead") {
           deadTimer -= dt;
           particles.forEach((p) => p.update(dt));
-          particles = particles.filter((p) => !p.dead);
+          removeDead(particles);
           asteroids.forEach((a) => a.update(dt));
           if (deadTimer <= 0) {
             state = "playing";
@@ -502,9 +508,9 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         particles.forEach((p) => p.update(dt));
         powerUps.forEach((p) => p.update(dt));
 
-        bullets = bullets.filter((b) => !b.dead);
-        particles = particles.filter((p) => !p.dead);
-        powerUps = powerUps.filter((p) => !p.dead);
+        removeDead(bullets);
+        removeDead(particles);
+        removeDead(powerUps);
 
         for (const p of powerUps) {
           if (!p.dead && dist(ship, p) < ship.radius + p.radius) {
@@ -534,8 +540,9 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
             }
           }
         }
-        asteroids = asteroids.filter((a) => !a.dead).concat(newAsteroids);
-        bullets = bullets.filter((b) => !b.dead);
+        removeDead(asteroids);
+        asteroids.push(...newAsteroids);
+        removeDead(bullets);
 
         // Nave vs asteroide
         if (ship.invincible <= 0) {
