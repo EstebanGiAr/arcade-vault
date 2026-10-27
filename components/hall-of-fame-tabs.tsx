@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Game, ScoreRow } from "@/app/data";
 import { createClient } from "@/lib/supabase/client";
-import { getTopScores, getBestScoreByName } from "@/lib/scores";
+import { getTopScores, getBestScoreByUser } from "@/lib/scores";
 import { useAuth } from "@/components/auth-provider";
 
 function realScoresToRows(
@@ -47,7 +47,7 @@ export function HallOfFameTabs({
         setYouBest(null);
         return;
       }
-      const best = await getBestScoreByName(supabase, game.id, user.name);
+      const best = await getBestScoreByUser(supabase, game.id, user.id);
       if (cancelled) return;
       setYouBest(
         best
