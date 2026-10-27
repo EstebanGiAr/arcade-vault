@@ -124,7 +124,15 @@ export function TouchControls({ gameId }: { gameId: string }) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-        />
+        >
+          <svg
+            className="touch-dpad-arrow"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M12 4 L20 16 L4 16 Z" fill="currentColor" />
+          </svg>
+        </button>
         <button
           type="button"
           className="touch-btn touch-dpad-down"
@@ -133,7 +141,15 @@ export function TouchControls({ gameId }: { gameId: string }) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-        />
+        >
+          <svg
+            className="touch-dpad-arrow"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M4 8 L20 8 L12 20 Z" fill="currentColor" />
+          </svg>
+        </button>
         <button
           type="button"
           className="touch-btn touch-dpad-left"
@@ -142,7 +158,15 @@ export function TouchControls({ gameId }: { gameId: string }) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-        />
+        >
+          <svg
+            className="touch-dpad-arrow"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M16 4 L16 20 L4 12 Z" fill="currentColor" />
+          </svg>
+        </button>
         <button
           type="button"
           className="touch-btn touch-dpad-right"
@@ -151,7 +175,15 @@ export function TouchControls({ gameId }: { gameId: string }) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-        />
+        >
+          <svg
+            className="touch-dpad-arrow"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M8 4 L20 12 L8 20 Z" fill="currentColor" />
+          </svg>
+        </button>
       </div>
       <div className="touch-actions">
         <button

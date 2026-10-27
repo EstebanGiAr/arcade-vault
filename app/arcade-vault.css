@@ -1298,6 +1298,11 @@ a {
   height: 44px;
   border-radius: 14px;
 }
+.touch-dpad-arrow {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
 .touch-dpad-up {
   top: 0;
   left: 44px;
