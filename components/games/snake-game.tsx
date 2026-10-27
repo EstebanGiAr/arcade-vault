@@ -7,6 +7,7 @@ import type {
   ArcadeGameProps,
   ArcadeStats,
 } from "@/components/games/registry";
+import { hexToRgba, type GameSkin } from "@/components/games/skins";
 
 const W = 800;
 const H = 600;
@@ -115,10 +116,11 @@ const OPPOSITE_DIRECTION: Record<Direction, Direction> = {
 };
 
 export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
-  function SnakeGame({ paused, onStatsChange, onGameOver }, ref) {
+  function SnakeGame({ paused, skin, onStatsChange, onGameOver }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const pausedRef = useRef(paused);
+    const skinRef = useRef(skin);
     const resetTimeRef = useRef(false);
     const callbacksRef = useRef({
       onStatsChange,
@@ -151,6 +153,10 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         onGameOver,
       };
     }, [onStatsChange, onGameOver]);
+
+    useEffect(() => {
+      skinRef.current = skin;
+    }, [skin]);
 
     useEffect(() => {
       const maybeContainer = containerRef.current;
@@ -325,31 +331,42 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         }
       }
 
-      function drawOverlay(message: string) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      function drawOverlay(message: string, skin: GameSkin) {
+        ctx.fillStyle = hexToRgba(skin.bg, 0.6);
         ctx.fillRect(0, 0, W, H);
-        ctx.fillStyle = "#fff";
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = skin.ink;
+        ctx.fillStyle = skin.ink;
         ctx.font = "bold 64px monospace";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(message, W / 2, H / 2);
+        ctx.shadowBlur = 0;
       }
 
       function draw() {
+        const skin = skinRef.current;
         const scaleX = canvas.width / W;
         const scaleY = canvas.height / H;
         ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
 
-        ctx.fillStyle = "#000";
+        ctx.fillStyle = skin.bg;
         ctx.fillRect(0, 0, W, H);
 
         snake.forEach((cell, index) => {
-          ctx.fillStyle = index === 0 ? "#9dff6b" : "#4caf32";
+          const color = index === 0 ? skin.accent : skin.accentAlt;
+          ctx.save();
+          ctx.shadowBlur = skin.glow;
+          ctx.shadowColor = color;
+          ctx.fillStyle = color;
           ctx.fillRect(cell.col * CELL, cell.row * CELL, CELL - 1, CELL - 1);
+          ctx.restore();
         });
 
         if (imgLoaded) {
           const frame = FRUITS[fruit.kind];
+          ctx.save();
+          ctx.filter = skin.spriteFilter ?? "none";
           ctx.drawImage(
             fruitsImg,
             frame.x,
@@ -361,9 +378,10 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
             CELL,
             CELL,
           );
+          ctx.restore();
         }
 
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = skin.ink;
         ctx.font = "bold 18px monospace";
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
@@ -371,7 +389,7 @@ export const SnakeGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         ctx.textAlign = "center";
         ctx.fillText("Nivel: " + level, W / 2, 10);
 
-        if (gameState === "gameover") drawOverlay("GAME OVER");
+        if (gameState === "gameover") drawOverlay("GAME OVER", skin);
       }
 
       initGame();

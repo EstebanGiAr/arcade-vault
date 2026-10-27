@@ -7,6 +7,11 @@ import type {
   ArcadeGameProps,
   ArcadeStats,
 } from "@/components/games/registry";
+import {
+  hexToRgba,
+  type GameSkin,
+  type SkinId,
+} from "@/components/games/skins";
 
 const W = 800;
 const H = 600;
@@ -208,27 +213,48 @@ function loadSpritesheet(cb: () => void) {
   rawImg.src = "/games/arkanoid/spritesheet-breakout.png";
 }
 
+/**
+ * Crea una copia del spritesheet con un `filter` CSS aplicado (tinte de skin).
+ * Se ejecuta una sola vez por skin (memoizado en `tintCacheRef`), nunca por frame.
+ */
+function tintSpritesheet(
+  base: HTMLCanvasElement,
+  filter: string,
+): HTMLCanvasElement {
+  const oc = document.createElement("canvas");
+  oc.width = base.width;
+  oc.height = base.height;
+  const octx = oc.getContext("2d");
+  if (octx) {
+    octx.filter = filter;
+    octx.drawImage(base, 0, 0);
+  }
+  return oc;
+}
+
 function drawFrame(
   ctx: CanvasRenderingContext2D,
+  sheet: HTMLCanvasElement | null,
   frame: SpriteFrame,
   x: number,
   y: number,
   w: number,
   h: number,
 ) {
-  if (!ssLoaded || !ssImg) return;
-  ctx.drawImage(ssImg, frame.sx, frame.sy, frame.sw, frame.sh, x, y, w, h);
+  if (!sheet) return;
+  ctx.drawImage(sheet, frame.sx, frame.sy, frame.sw, frame.sh, x, y, w, h);
 }
 
 function drawSprite(
   ctx: CanvasRenderingContext2D,
+  sheet: HTMLCanvasElement | null,
   name: string,
   x: number,
   y: number,
   w: number,
   h: number,
 ) {
-  if (!ssLoaded || !ssImg) return;
+  if (!sheet) return;
   let sp: SpriteFrame | undefined;
   if (name.startsWith("block_")) {
     sp = SPRITES.blocks[name.slice(6)];
@@ -236,14 +262,15 @@ function drawSprite(
     sp = SPRITES[name];
   }
   if (!sp) return;
-  ctx.drawImage(ssImg, sp.sx, sp.sy, sp.sw, sp.sh, x, y, w, h);
+  ctx.drawImage(sheet, sp.sx, sp.sy, sp.sw, sp.sh, x, y, w, h);
 }
 
 export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
-  function ArkanoidGame({ paused, onStatsChange, onGameOver }, ref) {
+  function ArkanoidGame({ paused, skin, onStatsChange, onGameOver }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const pausedRef = useRef(paused);
+    const skinRef = useRef(skin);
     const resetTimeRef = useRef(false);
     const callbacksRef = useRef({
       onStatsChange,
@@ -253,6 +280,11 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       restart: () => {},
       forceGameOver: () => {},
     });
+    // Copias tintadas del spritesheet por skin, memoizadas; se recalculan solo
+    // cuando cambia la skin (nunca por frame). `null` mientras el sheet base
+    // todavía no cargó.
+    const activeSheetRef = useRef<HTMLCanvasElement | null>(null);
+    const tintCacheRef = useRef<Map<SkinId, HTMLCanvasElement>>(new Map());
 
     useImperativeHandle(
       ref,
@@ -276,6 +308,29 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         onGameOver,
       };
     }, [onStatsChange, onGameOver]);
+
+    // Re-tinta el spritesheet offscreen cuando cambia la skin. `ssImg` es el
+    // canvas base (crudo, sin tinte) cacheado a nivel de módulo; aquí solo se
+    // calcula/memoiza la copia tintada y se publica en `activeSheetRef` para
+    // que el loop de `draw()` la lea sin recomputar nada por frame.
+    useEffect(() => {
+      skinRef.current = skin;
+      function applySkinToSheet() {
+        if (!ssLoaded || !ssImg) return;
+        if (!skin.spriteFilter) {
+          activeSheetRef.current = ssImg;
+          return;
+        }
+        let tinted = tintCacheRef.current.get(skin.id);
+        if (!tinted) {
+          tinted = tintSpritesheet(ssImg, skin.spriteFilter);
+          tintCacheRef.current.set(skin.id, tinted);
+        }
+        activeSheetRef.current = tinted;
+      }
+      if (ssLoaded) applySkinToSheet();
+      else ssCallbacks.push(applySkinToSheet);
+    }, [skin]);
 
     useEffect(() => {
       const maybeContainer = containerRef.current;
@@ -501,28 +556,35 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         }
       }
 
-      function drawOverlay(message: string) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      function drawOverlay(skin: GameSkin, message: string) {
+        ctx.fillStyle = hexToRgba(skin.bg, 0.6);
         ctx.fillRect(0, 0, W, H);
-        ctx.fillStyle = "#fff";
+        ctx.save();
+        ctx.shadowBlur = skin.glow;
+        ctx.shadowColor = skin.ink;
+        ctx.fillStyle = skin.ink;
         ctx.font = "bold 64px monospace";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(message, W / 2, H / 2);
+        ctx.restore();
       }
 
       function draw() {
+        const skin = skinRef.current;
+        const sheet = activeSheetRef.current;
         const scaleX = canvas.width / W;
         const scaleY = canvas.height / H;
         ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
 
-        ctx.fillStyle = "#000";
+        ctx.fillStyle = skin.bg;
         ctx.fillRect(0, 0, W, H);
 
         for (const block of blocks) {
           if (block.alive)
             drawSprite(
               ctx,
+              sheet,
               "block_" + block.color,
               block.x,
               block.y,
@@ -538,30 +600,50 @@ export const ArkanoidGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           );
           const frames = EXPLOSION_FRAMES[exp.color];
           if (frames)
-            drawFrame(ctx, frames[frameIndex], exp.x, exp.y, exp.w, exp.h);
+            drawFrame(
+              ctx,
+              sheet,
+              frames[frameIndex],
+              exp.x,
+              exp.y,
+              exp.w,
+              exp.h,
+            );
         }
 
-        drawSprite(ctx, "paddle", paddle.x, paddle.y, paddle.w, paddle.h);
-        drawSprite(ctx, "ball", ball.x, ball.y, ball.w, ball.h);
+        drawSprite(
+          ctx,
+          sheet,
+          "paddle",
+          paddle.x,
+          paddle.y,
+          paddle.w,
+          paddle.h,
+        );
+        drawSprite(ctx, sheet, "ball", ball.x, ball.y, ball.w, ball.h);
 
         if (gameState === "playing") {
-          ctx.fillStyle = "#fff";
+          ctx.save();
+          ctx.shadowBlur = skin.glow;
+          ctx.shadowColor = skin.ink;
+          ctx.fillStyle = skin.ink;
           ctx.font = "bold 18px monospace";
           ctx.textAlign = "left";
           ctx.textBaseline = "top";
           ctx.fillText("Score: " + score, 10, 10);
           ctx.textAlign = "center";
           ctx.fillText("Nivel: " + currentLevel, W / 2, 10);
+          ctx.restore();
           const ballSize = 16;
           const ballSpacing = 4;
           for (let i = 0; i < lives; i++) {
             const bx = W - 10 - (lives - i) * (ballSize + ballSpacing);
-            drawSprite(ctx, "ball", bx, 10, ballSize, ballSize);
+            drawSprite(ctx, sheet, "ball", bx, 10, ballSize, ballSize);
           }
         }
 
-        if (gameState === "gameover") drawOverlay("GAME OVER");
-        if (gameState === "win") drawOverlay("¡COMPLETASTE EL JUEGO!");
+        if (gameState === "gameover") drawOverlay(skin, "GAME OVER");
+        if (gameState === "win") drawOverlay(skin, "¡COMPLETASTE EL JUEGO!");
       }
 
       actionsRef.current.restart = initGame;

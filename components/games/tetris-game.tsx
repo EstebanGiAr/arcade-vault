@@ -13,22 +13,11 @@ import type {
   ArcadeGameProps,
   ArcadeStats,
 } from "@/components/games/registry";
+import { hexToRgba } from "@/components/games/skins";
 
 const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
-
-const COLORS: (string | null)[] = [
-  null,
-  "#4dd0e1", // I - cyan
-  "#ffd54f", // O - yellow
-  "#ba68c8", // T - purple
-  "#81c784", // S - green
-  "#e57373", // Z - red
-  "#90caf9", // J - pale blue
-  "#ffb74d", // L - orange
-  "#9e9e9e", // N - tuerca (gris metálico)
-];
 
 const PIECES: (number[][] | null)[] = [
   null,
@@ -124,11 +113,12 @@ function rotateCW(shape: number[][]): number[][] {
 }
 
 export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
-  function TetrisGame({ paused, onStatsChange, onGameOver }, ref) {
+  function TetrisGame({ paused, skin, onStatsChange, onGameOver }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nextCanvasRef = useRef<HTMLCanvasElement>(null);
     const pausedRef = useRef(paused);
+    const skinRef = useRef(skin);
     const resetTimeRef = useRef(false);
     const callbacksRef = useRef({ onStatsChange, onGameOver });
     const actionsRef = useRef<ArcadeGameHandle>({
@@ -161,6 +151,10 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
     useEffect(() => {
       callbacksRef.current = { onStatsChange, onGameOver };
     }, [onStatsChange, onGameOver]);
+
+    useEffect(() => {
+      skinRef.current = skin;
+    }, [skin]);
 
     useEffect(() => {
       const maybeContainer = containerRef.current;
@@ -346,18 +340,23 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         alpha = 1,
       ) {
         if (!colorIndex) return;
-        const color = COLORS[colorIndex];
+        const skin = skinRef.current;
+        const color = skin.entities[colorIndex - 1];
         if (!color) return;
+        context.save();
         context.globalAlpha = alpha;
+        context.shadowBlur = skin.glow;
+        context.shadowColor = color;
         context.fillStyle = color;
         context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-        context.fillStyle = "rgba(255,255,255,0.12)";
+        context.shadowBlur = 0;
+        context.fillStyle = hexToRgba(skin.ink, 0.12);
         context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-        context.globalAlpha = 1;
+        context.restore();
       }
 
       function drawGrid() {
-        ctx.strokeStyle = "#22222e";
+        ctx.strokeStyle = skinRef.current.grid;
         ctx.lineWidth = 0.5;
         for (let c = 1; c < COLS; c++) {
           ctx.beginPath();
@@ -505,17 +504,20 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
     const labelStyle = {
       fontSize: Math.max(7, 10 * panelScale),
       letterSpacing: "2px",
-      color: "#555570",
+      color: skin.inkDim,
       fontWeight: 600,
     } as const;
     const valueStyle = {
       fontFamily: "monospace",
       fontSize: Math.max(11, 22 * panelScale),
       fontWeight: 700,
-      color: "#7aa2f7",
+      color: skin.accent,
       letterSpacing: "1px",
     } as const;
     const nextDisplaySize = Math.max(40, 120 * panelScale);
+    // El borde del panel NEXT reutiliza el color de rejilla del skin; en
+    // clasico mantiene el literal original para fidelidad pixel a pixel.
+    const nextPanelBorder = skin.id === "clasico" ? "#2a2a3a" : skin.grid;
 
     return (
       <div
@@ -559,8 +561,8 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
                 display: "block",
                 width: nextDisplaySize,
                 height: nextDisplaySize,
-                background: "rgba(0,0,0,0.4)",
-                border: "1px solid #2a2a3a",
+                background: hexToRgba(skin.bg, 0.4),
+                border: `1px solid ${nextPanelBorder}`,
                 borderRadius: 4,
               }}
             />
