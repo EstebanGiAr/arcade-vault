@@ -60,6 +60,8 @@ Contrato de cada componente de juego:
 
 `game-player.tsx` resuelve el juego por `game.id`; si no hay entrada en el registry, cae a un modo decorativo (puntuación simulada) para juegos del catálogo aún sin implementar.
 
+`ArcadeGameProps` incluye `skin: GameSkin` (tipo y paletas en `components/games/skins.ts`). Los juegos migrados a skins leen el color siempre vía `skinRef.current` (ref sincronizada por `useEffect`, nunca dependencia del loop principal) en vez de literales hardcodeados; `references/game-with-themes.md` lleva el registro de qué juegos ya migraron.
+
 Los assets de cada juego van en `public/games/<id>/` y se referencian por ruta absoluta.
 
 ### Datos (Supabase)
@@ -88,6 +90,7 @@ No hay auth real. `components/auth-provider.tsx` + `lib/storage.ts` guardan solo
 
 - **`game-planner`** (`.claude/agents/game-planner.md`, subagente): decide qué juego añadir a continuación. Audita lo implementado, puntúa candidatos contra el contrato del registry y los huecos del catálogo, y mantiene el backlog en `references/game-suggestions.md`. No escribe specs: su salida alimenta `/add-game`. Es el paso previo, no un sustituto, de esa skill.
 - **`game-jam`** (`.claude/agents/game-jam.md`, subagente): recibe un juego ya decidido (no un tema para elegir libremente) y genera su dossier completo, descompuesto en al menos dos specs secuenciales dentro de `specs/game-jam/<game-id>/`. Solo escribe specs (sin código, sin Supabase, sin tocar el backlog de `game-planner`); queda fuera del pipeline `game-planner` → `/add-game` → `/spec-impl`, es un generador independiente de borradores para revisión manual.
+- **`skin-designer`** (`.claude/agents/skin-designer.md`, subagente): implementa las skins `clasico`/`neon`/`retro` de **un solo juego por invocación**, siempre el que se le indique explícitamente (nunca elige ni audita el catálogo completo). Escribe código directamente (sin spec previa), crea/consume la capa compartida `components/games/skins.ts` y deja el registro en `references/game-with-themes.md`. No toca Supabase, no hace commits, queda fuera del pipeline `game-planner` → `/add-game`.
 - **`/add-game`** (`.claude/skills/add-game/`, local a este repo): diseña la spec de un juego nuevo con leaderboard. Es una especialización de `/spec` para el dominio arcade; no escribe código, solo `specs/NN-juego-<id>.md`. Sus referencias (`port-recipe.md`, `platform-integration.md`, `game-spec-notes.md`) documentan la receta de port al stack React/canvas/Supabase. Usarla siempre que se vaya a añadir un juego.
 - **`/impeccable`** para diseñar o revisar interfaz de usuario, respetando las excepciones ya registradas en `.impeccable/config.json`.
 
