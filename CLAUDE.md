@@ -87,6 +87,7 @@ No hay auth real. `components/auth-provider.tsx` + `lib/storage.ts` guardan solo
 ## Skills y agentes
 
 - **`game-planner`** (`.claude/agents/game-planner.md`, subagente): decide qué juego añadir a continuación. Audita lo implementado, puntúa candidatos contra el contrato del registry y los huecos del catálogo, y mantiene el backlog en `references/game-suggestions.md`. No escribe specs: su salida alimenta `/add-game`. Es el paso previo, no un sustituto, de esa skill.
+- **`game-jam`** (`.claude/agents/game-jam.md`, subagente): recibe un juego ya decidido (no un tema para elegir libremente) y genera su dossier completo, descompuesto en al menos dos specs secuenciales dentro de `specs/game-jam/<game-id>/`. Solo escribe specs (sin código, sin Supabase, sin tocar el backlog de `game-planner`); queda fuera del pipeline `game-planner` → `/add-game` → `/spec-impl`, es un generador independiente de borradores para revisión manual.
 - **`/add-game`** (`.claude/skills/add-game/`, local a este repo): diseña la spec de un juego nuevo con leaderboard. Es una especialización de `/spec` para el dominio arcade; no escribe código, solo `specs/NN-juego-<id>.md`. Sus referencias (`port-recipe.md`, `platform-integration.md`, `game-spec-notes.md`) documentan la receta de port al stack React/canvas/Supabase. Usarla siempre que se vaya a añadir un juego.
 - **`/impeccable`** para diseñar o revisar interfaz de usuario, respetando las excepciones ya registradas en `.impeccable/config.json`.
 
@@ -105,3 +106,4 @@ Reglas vigentes del flujo:
 - Nacen en `**Estado:** Borrador`; nunca auto-aprobar. Al terminar la implementación se pasan a `Implementada` y se marcan los criterios de aceptación.
 - `specs/.spec-config.yml` tiene `AutoCreateBranch: true`: `/spec-impl` crea y cambia a la rama `spec-NN-slug` sin preguntar. El trabajo se integra a `main` por PR.
 - En `/spec-impl`, verificar en Chrome **solo al final**, no tras cada paso intermedio.
+- Las specs bajo `specs/game-jam/<game-id>/` (generadas por el subagente `game-jam`) son borradores exploratorios con numeración local a su propia carpeta, fuera de la secuencia `NN-slug.md` de `specs/`; se renumeran e integran a esa secuencia solo cuando un humano las revisa y decide promoverlas.
