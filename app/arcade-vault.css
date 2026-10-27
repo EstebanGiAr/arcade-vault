@@ -1309,9 +1309,13 @@ a {
   border: 1px solid var(--cyan);
   color: var(--cyan);
   cursor: pointer;
+  padding: 0;
   transition:
-    background 80ms ease,
-    box-shadow 80ms ease;
+    transform 80ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
 }
 .touch-btn:active {
   background: rgba(0, 245, 255, 0.28);
@@ -1329,6 +1333,31 @@ a {
   width: 44px;
   height: 44px;
   border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #1a1a25, #0a0a12);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--ink-faint);
+  box-shadow:
+    0 4px 0 #050507,
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.6);
+}
+.touch-dpad .touch-btn.touch-btn-pressed,
+.touch-dpad .touch-btn:active {
+  transform: translateY(3px);
+  color: var(--cyan);
+  background: linear-gradient(180deg, #08161e, #030a0e);
+  border-color: var(--cyan);
+  box-shadow:
+    0 1px 0 #050507,
+    inset 0 0 16px rgba(0, 245, 255, 0.45),
+    0 0 16px rgba(0, 245, 255, 0.5);
+}
+.touch-dpad .touch-btn.touch-btn-pressed .touch-dpad-arrow,
+.touch-dpad .touch-btn:active .touch-dpad-arrow {
+  filter: drop-shadow(0 0 6px var(--cyan)) drop-shadow(0 0 12px var(--cyan));
 }
 .touch-dpad-arrow {
   width: 20px;
