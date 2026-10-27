@@ -1421,11 +1421,78 @@ a {
   gap: 16px;
 }
 .touch-btn-round {
+  position: relative;
   width: 58px;
   height: 58px;
   border-radius: 50%;
   font-family: var(--pixel);
   font-size: 12px;
+}
+.touch-btn-round::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px dashed var(--touch-ab-glow, currentColor);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 140ms ease,
+    transform 200ms ease;
+}
+.touch-btn.touch-btn-a,
+.touch-btn.touch-btn-b {
+  color: #fff;
+  border: 2px solid var(--touch-ab-glow);
+  background:
+    radial-gradient(
+      circle at 32% 26%,
+      rgba(255, 255, 255, 0.25),
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 50% 55%,
+      var(--touch-ab-mid),
+      var(--touch-ab-deep) 75%
+    );
+  box-shadow:
+    0 6px 0 #050507,
+    0 0 18px var(--touch-ab-glow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.4);
+  text-shadow:
+    0 0 8px var(--touch-ab-glow),
+    0 0 18px var(--touch-ab-glow),
+    0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.touch-btn.touch-btn-a {
+  --touch-ab-glow: var(--magenta);
+  --touch-ab-glow-soft: rgba(255, 0, 110, 0.4);
+  --touch-ab-mid: rgba(255, 0, 110, 0.7);
+  --touch-ab-deep: rgba(110, 0, 40, 0.95);
+}
+.touch-btn.touch-btn-b {
+  --touch-ab-glow: var(--cyan);
+  --touch-ab-glow-soft: rgba(0, 245, 255, 0.4);
+  --touch-ab-mid: rgba(0, 200, 230, 0.7);
+  --touch-ab-deep: rgba(0, 50, 70, 0.95);
+}
+.touch-btn.touch-btn-a.touch-btn-pressed,
+.touch-btn.touch-btn-a:active,
+.touch-btn.touch-btn-b.touch-btn-pressed,
+.touch-btn.touch-btn-b:active {
+  transform: translateY(4px) scale(0.97);
+  box-shadow:
+    0 1px 0 #050507,
+    0 0 36px var(--touch-ab-glow-soft),
+    inset 0 0 18px rgba(0, 0, 0, 0.5);
+}
+.touch-btn.touch-btn-a.touch-btn-pressed::after,
+.touch-btn.touch-btn-a:active::after,
+.touch-btn.touch-btn-b.touch-btn-pressed::after,
+.touch-btn.touch-btn-b:active::after {
+  opacity: 1;
+  transform: scale(1.08);
 }
 
 /* fake in-screen game */
