@@ -121,6 +121,23 @@ export const GAME_REGISTRY: Record<string, ArcadeGameEntry> = {
     hudStats: ["score", "lives", "level"],
     initialStats: { score: 0, lives: 3, level: 1 },
     aspectRatio: "8 / 7",
+    skinOverrides: {
+      clasico: {
+        accent: "#4caf50", // rana
+        accentAlt: "#2e7d32", // rana en meta cumplida
+        entities: ["#e53935", "#9e9e9e", "#6d4c21", "#2e8b57"], // coche, camión, tronco, tortuga
+      },
+      neon: {
+        accent: "#00ff88",
+        accentAlt: "#00cc6a",
+        entities: ["#ff006e", "#8a93b0", "#ff8c42", "#00f5ff"],
+      },
+      retro: {
+        accent: "#9dff6b",
+        accentAlt: "#6bffb0",
+        entities: ["#ff6b3d", "#ffb000", "#c8ff6b", "#2fd0d0"],
+      },
+    },
   },
   snake: {
     component: SnakeGame,

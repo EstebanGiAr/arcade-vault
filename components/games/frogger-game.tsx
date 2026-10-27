@@ -54,8 +54,8 @@ type Frog = {
   targetRow: number;
 };
 
-const ROAD_LANE_BASE_SPEED = [1.5, 2.2, 3, 3.6, 4]; // celdas/seg por carril (fila 8→12)
-const RIVER_LANE_BASE_SPEED = [1, 1.4, 1.8, 2.2, 2.6, 3]; // celdas/seg por carril (fila 1→6)
+const ROAD_LANE_BASE_SPEED = [0.9, 1.2, 1.5, 1.8, 2.1]; // celdas/seg por carril (fila 8→12)
+const RIVER_LANE_BASE_SPEED = [0.6, 0.8, 1, 1.2, 1.4, 1.6]; // celdas/seg por carril (fila 1→6)
 const TURTLE_VISIBLE_MS = 3000;
 const TURTLE_SUBMERGED_MS = 1500;
 
@@ -72,7 +72,7 @@ function buildRoadLane(
   let col = Math.floor(Math.random() * 4) - width;
   while (col < COLS + width) {
     entities.push({ col, width, type });
-    col += width + 2 + Math.floor(Math.random() * 2); // hueco de 2-3 celdas
+    col += width + 3 + Math.floor(Math.random() * 3); // hueco de 3-5 celdas
   }
   return { row, speed, dir, entities };
 }
@@ -107,9 +107,9 @@ function buildRiverLane(
   return { row, speed, dir, entities };
 }
 
-/** Cada nivel incrementa todas las velocidades un 15%. */
+/** Cada nivel incrementa todas las velocidades un 10%. */
 function buildLanes(level: number): Lane[] {
-  const speedMultiplier = Math.pow(1.15, level - 1);
+  const speedMultiplier = Math.pow(1.1, level - 1);
   const lanes: Lane[] = [];
   for (let i = 0; i < 5; i++) {
     lanes.push(buildRoadLane(ROW_ROAD_TOP + i, i, speedMultiplier));
@@ -424,48 +424,104 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         }
       }
 
-      function zoneColor(row: number): string {
-        if (row === ROW_GOALS) return "#063a1f";
-        if (row >= ROW_RIVER_TOP && row <= ROW_RIVER_BOT) return "#0a2a4a";
-        if (row === ROW_SAFE_MID || row === ROW_START) return "#0d3a1a";
-        return "#111111";
+      // Paleta de zonas/entidades que no vive en skins.ts: estos literales son
+      // específicos de frogger (fondo de río/carretera/césped, franjas de meta)
+      // y no corresponden 1:1 a los campos semánticos genéricos de `GameSkin`.
+      // `clasico` reproduce exactamente los literales previos del juego.
+      type ZoneTheme = {
+        road: string;
+        river: string;
+        grass: string;
+        goalGap: string;
+        goalOpen: string;
+        goalFilled: string;
+        goalBorder: string;
+        logStroke: string;
+      };
+
+      function zoneThemeFor(skin: GameSkin): ZoneTheme {
+        if (skin.id === "neon") {
+          return {
+            road: "#0a0a12",
+            river: "#0d1733",
+            grass: "#0a2b1f",
+            goalGap: "#082018",
+            goalOpen: "#124a33",
+            goalFilled: "#0a3524",
+            goalBorder: "#00f5ff",
+            logStroke: "#b35a1f",
+          };
+        }
+        if (skin.id === "retro") {
+          return {
+            road: "#07120a",
+            river: "#0a2018",
+            grass: "#0a2a12",
+            goalGap: "#07200f",
+            goalOpen: "#164a1f",
+            goalFilled: "#0d3614",
+            goalBorder: "#ffb000",
+            logStroke: "#8a5600",
+          };
+        }
+        return {
+          road: "#111111",
+          river: "#0a2a4a",
+          grass: "#0d3a1a",
+          goalGap: "#063a1f",
+          goalOpen: "#0d7a35",
+          goalFilled: "#0a5c2a",
+          goalBorder: "#d4af37",
+          logStroke: "#4e3417",
+        };
       }
 
-      function drawZones() {
+      function zoneColor(row: number, zones: ZoneTheme): string {
+        if (row === ROW_GOALS) return zones.goalGap;
+        if (row >= ROW_RIVER_TOP && row <= ROW_RIVER_BOT) return zones.river;
+        if (row === ROW_SAFE_MID || row === ROW_START) return zones.grass;
+        return zones.road;
+      }
+
+      function drawZones(skin: GameSkin) {
+        const zones = zoneThemeFor(skin);
         for (let row = 0; row < ROWS; row++) {
-          ctx.fillStyle = zoneColor(row);
+          ctx.fillStyle = zoneColor(row, zones);
           ctx.fillRect(0, row * CELL, CANVAS_W, CELL);
         }
       }
 
       function drawGoals(skin: GameSkin) {
+        const zones = zoneThemeFor(skin);
         for (let i = 0; i < GOAL_RANGES.length; i++) {
           const [a, b] = GOAL_RANGES[i];
           const x = a * CELL;
           const w = (b - a + 1) * CELL;
-          ctx.fillStyle = goals[i] ? "#0a5c2a" : "#0d7a35";
+          ctx.fillStyle = goals[i] ? zones.goalFilled : zones.goalOpen;
           ctx.fillRect(x, ROW_GOALS * CELL, w, CELL);
-          ctx.strokeStyle = "#d4af37";
+          ctx.strokeStyle = zones.goalBorder;
           ctx.lineWidth = 2;
           ctx.strokeRect(x + 1, ROW_GOALS * CELL + 1, w - 2, CELL - 2);
           if (goals[i]) {
             drawFrogShape(
               x + w / 2,
               ROW_GOALS * CELL + CELL / 2,
-              "#2e7d32",
+              skin.accentAlt,
               skin,
             );
           }
         }
       }
 
-      function drawEntities() {
+      function drawEntities(skin: GameSkin) {
+        const zones = zoneThemeFor(skin);
+        const [carColor, truckColor, logColor, turtleColor] = skin.entities;
         for (const lane of lanes) {
           for (const e of lane.entities) {
             const x = e.col * CELL;
             const y = lane.row * CELL;
             if (e.type === "car" || e.type === "truck") {
-              ctx.fillStyle = e.type === "truck" ? "#9e9e9e" : "#e53935";
+              ctx.fillStyle = e.type === "truck" ? truckColor : carColor;
               ctx.fillRect(x + 2, y + 6, e.width * CELL - 4, CELL - 16);
               ctx.fillStyle = "#222";
               const wheelY = y + CELL - 10;
@@ -475,9 +531,9 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
                 ctx.fill();
               }
             } else if (e.type === "log") {
-              ctx.fillStyle = "#6d4c21";
+              ctx.fillStyle = logColor;
               ctx.fillRect(x + 1, y + 8, e.width * CELL - 2, CELL - 16);
-              ctx.strokeStyle = "#4e3417";
+              ctx.strokeStyle = zones.logStroke;
               for (let lx = x + 6; lx < x + e.width * CELL; lx += 10) {
                 ctx.beginPath();
                 ctx.moveTo(lx, y + 8);
@@ -486,7 +542,7 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
               }
             } else {
               ctx.globalAlpha = e.submerged ? 0.25 : 1;
-              ctx.fillStyle = "#2e8b57";
+              ctx.fillStyle = turtleColor;
               for (let i = 0; i < e.width; i++) {
                 ctx.beginPath();
                 ctx.arc(
@@ -547,7 +603,7 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           : frog.row;
         const cx = displayCol * CELL + CELL / 2;
         const cy = displayRow * CELL + CELL / 2;
-        drawFrogShape(cx, cy, "#4caf50", skin, frog.animating);
+        drawFrogShape(cx, cy, skin.accent, skin, frog.animating);
       }
 
       function drawHud(skin: GameSkin) {
@@ -567,7 +623,7 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         const spacing = 4;
         for (let i = 0; i < lives; i++) {
           const bx = CANVAS_W - 14 - (lives - i) * (iconSize + spacing);
-          drawFrogShape(bx, 8, "#4caf50", skin);
+          drawFrogShape(bx, 8, skin.accent, skin);
         }
 
         const timeFrac = Math.max(
@@ -576,7 +632,7 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         );
         const barColor =
           timeFrac > 0.5 ? "#2ecc71" : timeFrac > 0.25 ? "#f1c40f" : "#e74c3c";
-        ctx.fillStyle = "rgba(255,255,255,0.15)";
+        ctx.fillStyle = hexToRgba(skin.ink, 0.15);
         ctx.fillRect(0, 0, CANVAS_W, 4);
         ctx.fillStyle = barColor;
         ctx.fillRect(0, 0, CANVAS_W * timeFrac, 4);
@@ -601,8 +657,8 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
         const scaleX = canvas.width / CANVAS_W;
         const scaleY = canvas.height / CANVAS_H;
         ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
-        drawZones();
-        drawEntities();
+        drawZones(skin);
+        drawEntities(skin);
         drawGoals(skin);
         drawFrog(skin);
         drawHud(skin);
@@ -621,7 +677,7 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
           tryJump(dir);
         }
       };
-      document.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keydown", onKeyDown);
 
       actionsRef.current.restart = initGame;
       actionsRef.current.forceGameOver = () => {
@@ -650,7 +706,7 @@ export const FroggerGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       return () => {
         cancelAnimationFrame(rafId);
         resizeObserver.disconnect();
-        document.removeEventListener("keydown", onKeyDown);
+        window.removeEventListener("keydown", onKeyDown);
       };
     }, []);
 
