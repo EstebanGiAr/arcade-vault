@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/app/data";
 import { saveScore } from "@/lib/scores";
 import { createClient } from "@/lib/supabase/client";
+import { readSkin, writeSkin } from "@/lib/storage";
 import { useAuth } from "@/components/auth-provider";
 import {
   GAME_REGISTRY,
@@ -12,6 +19,14 @@ import {
   type ArcadeStats,
   type HudStatKey,
 } from "@/components/games/registry";
+import {
+  DEFAULT_SKIN_ID,
+  GAME_SKINS,
+  resolveSkin,
+  type SkinId,
+} from "@/components/games/skins";
+
+const SKIN_IDS: SkinId[] = ["clasico", "neon", "retro"];
 
 const HUD_LABELS: Record<HudStatKey, string> = {
   score: "Puntuación",
@@ -47,6 +62,26 @@ export function GamePlayer({ game }: { game: Game }) {
   const score = stats.score ?? 0;
   const level = entry ? (stats.level ?? 1) : Math.floor(score / 2500) + 1;
   const hudStats = entry?.hudStats ?? DECORATIVE_HUD_STATS;
+
+  const [skinId, setSkinId] = useState<SkinId>(DEFAULT_SKIN_ID);
+
+  useEffect(() => {
+    // Lectura diferida al montaje en cliente para evitar mismatches de hidratación.
+    const stored = readSkin();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (stored === "neon" || stored === "retro") setSkinId(stored);
+  }, []);
+
+  const skin = useMemo(() => {
+    const base = resolveSkin(skinId);
+    const override = entry?.skinOverrides?.[base.id];
+    return override ? { ...base, ...override } : base;
+  }, [skinId, entry]);
+
+  const handleSkinChange = (id: SkinId) => {
+    setSkinId(id);
+    writeSkin(id);
+  };
 
   useEffect(() => {
     // Sincroniza el nombre con la sesión (login/logout) manteniéndolo editable
@@ -126,6 +161,29 @@ export function GamePlayer({ game }: { game: Game }) {
           ))}
         </div>
         <div className="hud-actions">
+          {entry && (
+            <label
+              className={`skin-picker ${skinId}`}
+              style={
+                {
+                  "--skin-swatch": GAME_SKINS[skinId].swatch,
+                } as CSSProperties
+              }
+            >
+              <span className="dot" />
+              <select
+                className="skin-select"
+                value={skinId}
+                onChange={(e) => handleSkinChange(e.target.value as SkinId)}
+              >
+                {SKIN_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {GAME_SKINS[id].label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
@@ -155,6 +213,7 @@ export function GamePlayer({ game }: { game: Game }) {
             <entry.component
               ref={gameRef}
               paused={paused}
+              skin={skin}
               onStatsChange={handleStatsChange}
               onGameOver={endGame}
             />

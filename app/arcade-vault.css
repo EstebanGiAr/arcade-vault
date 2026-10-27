@@ -1060,6 +1060,70 @@ a {
 .hud-actions {
   display: flex;
   gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Selector de skin (clasico / neon / retro), port de .gp-themer/.swatch del prototipo */
+.skin-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 140ms;
+}
+.skin-picker .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--skin-swatch);
+  flex-shrink: 0;
+}
+.skin-picker:hover {
+  border-color: currentColor;
+}
+.skin-picker.neon {
+  color: var(--cyan);
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
+}
+.skin-picker.retro {
+  color: var(--green);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+}
+.skin-picker.clasico {
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+}
+.skin-select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font-family: var(--pixel);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: inherit;
+  cursor: pointer;
+  padding-right: 14px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 9px) center,
+    calc(100% - 4px) center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+}
+.skin-select:focus-visible {
+  outline: 1px solid currentColor;
+}
+.skin-select option {
+  background: var(--bg-2);
+  color: var(--ink);
 }
 
 .crt {
