@@ -1,6 +1,6 @@
 # 11 — Controles táctiles para los 4 juegos reales en dispositivos móviles
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 05, SPEC 07, SPEC 08, SPEC 09, SPEC 10
 **Fecha:** 2026-10-26
 
