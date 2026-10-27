@@ -6,3 +6,4 @@
 | `tetris`     | TETRIS     | PUZZLE    | `magenta` | Encaja piezas, despeja líneas y sube de nivel antes de que el tablero se desborde.         |
 | `arkanoid`   | ARKANOID   | ARCADE    | `yellow`  | Destruye cinco muros de bloques a pura rebotada antes de perder tus tres vidas.            |
 | `snake`      | SERPIENTE  | ARCADE    | `green`   | Guía a la serpiente, come fruta y evita chocar contigo mismo o con el borde.               |
+| `frogger`    | FROGGER    | ARCADE    | `green`   | Cruza carriles de tráfico y troncos de río sincronizando el salto antes de que el tiempo se agote. |

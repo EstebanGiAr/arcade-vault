@@ -9,7 +9,6 @@ con su ficha; al implementarse pasa a `Implementados`, y si se rechaza pasa a
 
 - `duelo` — VERSUS · cyan — Sugerido: 2026-10-26 — **recomendación principal**. Pong contra IA; ficha completa abajo.
 - `invasores` — SHOOTER · magenta — Sugerido: 2026-10-26 — alternativa. Shooter de oleadas en grilla fija (estilo Space Invaders), distinto de la física libre de `asteroides`. Cover huérfano `cover-invaders` ya listo.
-- `rana` — ARCADE · green — Sugerido: 2026-10-26 — alternativa. Cruce de carriles con temporización (estilo Frogger), mecánica de esquivar/temporizar no cubierta por `arkanoid` (rebote) ni `snake` (crecimiento). Cover huérfano `cover-rana` ya listo.
 - `galaga` — SHOOTER · yellow — Sugerido: 2026-10-26 — oleadas con patrones de vuelo en curva. Riesgo bajo. Sin cover huérfano libre.
 - `ciempies` — SHOOTER · green — Sugerido: 2026-10-26 — Centipede-like; ciempié que se fragmenta en segmentos independientes. Riesgo medio. Sin cover libre.
 - `comando-misiles` — SHOOTER · cyan — Sugerido: 2026-10-26 — Missile Command-like; apuntar y detonar antes de que los misiles lleguen a las ciudades. Riesgo bajo-medio. Disputa `cover-rocas`.
@@ -36,6 +35,7 @@ con su ficha; al implementarse pasa a `Implementados`, y si se rechaza pasa a
 - [x] `tetris` — PUZZLE · magenta — SPEC 07
 - [x] `arkanoid` — ARCADE · yellow — SPEC 08
 - [x] `snake` — ARCADE · green — SPEC 09
+- [x] `frogger` — ARCADE · green — `specs/game-jam/frogger/01-frogger-core.md`
 
 ## Descartados
 
@@ -65,13 +65,6 @@ con su ficha; al implementarse pasa a `Implementados`, y si se rechaza pasa a
 - **Mecánica:** oleadas de invasores en grilla fija que descienden y disparan, cañón del jugador se mueve en un eje horizontal — mecánica de "disparo en grilla" distinta a la física libre de asteroides/gravedad cero de `asteroides`.
 - **Cover:** reutilizar `cover-invaders` (huérfano, ya dibuja una grilla de invasores verde/magenta sobre un cañón cyan).
 - **Por qué quedó segunda:** cubre un hueco de variedad dentro de SHOOTER (ya tiene un representante), mientras que VERSUS no tiene ninguno — `duelo` prioriza el hueco más grande del catálogo.
-
-### rana (alternativa, sin ficha completa)
-
-- **cat/color:** `ARCADE` · `green`
-- **Mecánica:** cruce de carriles de tráfico/agua con temporización (estilo Frogger) — mecánica de esquivar y sincronizar movimiento, no cubierta por el rebote de `arkanoid` ni el crecimiento de `snake`.
-- **Cover:** reutilizar `cover-rana` (huérfano, ya dibuja carriles horizontales cyan con un punto verde central).
-- **Por qué quedó tercera:** buen hueco de mecánica, pero ARCADE ya tiene dos representantes (`arkanoid`, `snake`) mientras VERSUS no tiene ninguno.
 
 ---
 
