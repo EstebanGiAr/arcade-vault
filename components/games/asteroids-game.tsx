@@ -7,6 +7,7 @@ import type {
   ArcadeGameProps,
   ArcadeStats,
 } from "@/components/games/registry";
+import { setupResponsiveCanvas } from "@/components/games/canvas";
 import { hexToRgba, type GameSkin } from "@/components/games/skins";
 
 const W = 800;
@@ -375,23 +376,7 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       if (!maybeCtx) return;
       const ctx: CanvasRenderingContext2D = maybeCtx;
 
-      let pixelWidth = 0;
-      let pixelHeight = 0;
-      function resizeCanvasToContainer() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = container.getBoundingClientRect();
-        const newWidth = Math.max(1, Math.round(rect.width * dpr));
-        const newHeight = Math.max(1, Math.round(rect.height * dpr));
-        if (newWidth !== pixelWidth || newHeight !== pixelHeight) {
-          pixelWidth = newWidth;
-          pixelHeight = newHeight;
-          canvas.width = newWidth;
-          canvas.height = newHeight;
-        }
-      }
-      resizeCanvasToContainer();
-      const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
-      resizeObserver.observe(container);
+      const disconnectResize = setupResponsiveCanvas(container, canvas);
 
       const keys: Record<string, boolean> = {};
       const justPressed: Record<string, boolean> = {};
@@ -695,7 +680,7 @@ export const AsteroidsGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       return () => {
         cancelAnimationFrame(rafId);
-        resizeObserver.disconnect();
+        disconnectResize();
         window.removeEventListener("keydown", onKeyDown);
         window.removeEventListener("keyup", onKeyUp);
       };

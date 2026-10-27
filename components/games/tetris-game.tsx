@@ -13,6 +13,7 @@ import type {
   ArcadeGameProps,
   ArcadeStats,
 } from "@/components/games/registry";
+import { setupResponsiveCanvas } from "@/components/games/canvas";
 import { hexToRgba } from "@/components/games/skins";
 
 const COLS = 10;
@@ -170,37 +171,26 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
       const ctx: CanvasRenderingContext2D = maybeCtx;
       const nextCtx: CanvasRenderingContext2D = maybeNextCtx;
 
-      let pixelWidth = 0;
-      let pixelHeight = 0;
       let lastPanelScale = 1;
-      function resizeCanvasToContainer() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = container.getBoundingClientRect();
-        const newWidth = Math.max(1, Math.round(rect.width * dpr));
-        const newHeight = Math.max(1, Math.round(rect.height * dpr));
-        if (newWidth !== pixelWidth || newHeight !== pixelHeight) {
-          pixelWidth = newWidth;
-          pixelHeight = newHeight;
-          canvas.width = newWidth;
-          canvas.height = newHeight;
-        }
-
-        // Encoge el panel superpuesto (texto + "NEXT") en proporción al ancho
-        // real del tablero, para que no tape las piezas cuando el contenedor
-        // es angosto (p. ej. al limitar la altura para que quepa sin scroll).
-        const REFERENCE_WIDTH = 1004;
-        const nextScale = Math.min(
-          1,
-          Math.max(0.35, rect.width / REFERENCE_WIDTH),
-        );
-        if (Math.abs(nextScale - lastPanelScale) > 0.01) {
-          lastPanelScale = nextScale;
-          setPanelScale(nextScale);
-        }
-      }
-      resizeCanvasToContainer();
-      const resizeObserver = new ResizeObserver(resizeCanvasToContainer);
-      resizeObserver.observe(container);
+      const disconnectResize = setupResponsiveCanvas(
+        container,
+        canvas,
+        (rect) => {
+          // Encoge el panel superpuesto (texto + "NEXT") en proporción al
+          // ancho real del tablero, para que no tape las piezas cuando el
+          // contenedor es angosto (p. ej. al limitar la altura para que
+          // quepa sin scroll).
+          const REFERENCE_WIDTH = 1004;
+          const nextScale = Math.min(
+            1,
+            Math.max(0.35, rect.width / REFERENCE_WIDTH),
+          );
+          if (Math.abs(nextScale - lastPanelScale) > 0.01) {
+            lastPanelScale = nextScale;
+            setPanelScale(nextScale);
+          }
+        },
+      );
 
       const board: Board = createBoard();
       let current: Piece = randomPiece();
@@ -496,7 +486,7 @@ export const TetrisGame = forwardRef<ArcadeGameHandle, ArcadeGameProps>(
 
       return () => {
         cancelAnimationFrame(rafId);
-        resizeObserver.disconnect();
+        disconnectResize();
         window.removeEventListener("keydown", onKeyDown);
       };
     }, []);
