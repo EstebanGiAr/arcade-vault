@@ -1,6 +1,6 @@
 # 18 — Endurecimiento del formulario de contacto
 
-**Estado:** Aprobado
+**Estado:** Implementada
 **Depende de:** SPEC 03
 **Fecha:** 2026-10-28
 
@@ -46,14 +46,25 @@ Cada paso deja el proyecto funcional (`npm run dev` arranca sin errores).
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] Un envío con `name`/`email`/`message` dentro de los límites funciona igual que antes de esta spec.
-- [ ] Un envío con `name` > 100, `email` > 254 o `message` > 2000 caracteres responde `400` con un mensaje de validación y no llama a Resend.
-- [ ] Un `name` con saltos de línea o caracteres de control se envía con el subject saneado (sin esos caracteres), sin rechazar la request.
-- [ ] El cuarto envío exitoso desde la misma IP dentro de una hora responde `429`.
-- [ ] Con `CONTACT_TO_EMAIL` no definido o vacío, la ruta responde `500` sin invocar `resend.emails.send`.
-- [ ] El contrato de respuesta (`{ ok, error? }`) se mantiene sin romper el consumo actual del formulario en el cliente.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] Un envío con `name`/`email`/`message` dentro de los límites funciona igual que antes de esta spec.
+- [x] Un envío con `name` > 100, `email` > 254 o `message` > 2000 caracteres responde `400` con un mensaje de validación y no llama a Resend.
+- [x] Un `name` con saltos de línea o caracteres de control se envía con el subject saneado (sin esos caracteres), sin rechazar la request.
+- [x] El cuarto envío exitoso desde la misma IP dentro de una hora responde `429`.
+- [x] Con `CONTACT_TO_EMAIL` no definido o vacío, la ruta responde `500` sin invocar `resend.emails.send`.
+- [x] El contrato de respuesta (`{ ok, error? }`) se mantiene sin romper el consumo actual del formulario en el cliente.
+
+## Verificación final (resultado)
+
+Ejecutada el 2026-10-28 contra `npm run dev` en local, vía `curl` directo a `/api/contact`.
+
+- ✅ `npm run build` y `npm run lint` sin errores (3 warnings preexistentes en `app/contador/page.tsx` y `components/games/arkanoid-game.tsx`, ajenos a esta spec).
+- ✅ Un `message` de 2001 caracteres responde `400` (`"Uno de los campos excede la longitud máxima permitida."`).
+- ✅ Un `name` con `\r\nBcc: evil@attacker.test` se envía con `ok:true`; el subject se sanea sin que Resend rechace la request, confirmando que los caracteres de control no llegan al header.
+- ✅ Tres envíos válidos seguidos desde la misma IP (`"unknown"`, sin `x-forwarded-for` en local) responden `ok:true`; el cuarto responde `429` (`"Demasiados mensajes enviados. Intenta de nuevo más tarde."`).
+- ✅ Reiniciando el servidor con `CONTACT_TO_EMAIL=""`, la ruta responde `500` sin invocar a Resend.
+- ✅ `app/about/page.tsx` ya maneja genéricamente `{ ok, error }` sin importar el status HTTP — no requirió cambios (ver Paso 5 del plan).
 
 ## Decisiones tomadas y descartadas
 
