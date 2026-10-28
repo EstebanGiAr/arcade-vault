@@ -16,6 +16,7 @@ export function Nav() {
   const isHallOfFame = pathname === "/salon-de-la-fama";
   const isAbout = pathname === "/about";
   const isAuth = pathname === "/login";
+  const isAccount = pathname === "/cuenta";
 
   const close = () => setOpen(false);
 
@@ -56,9 +57,17 @@ export function Nav() {
           <span>CRÉDITOS · 03</span>
         </div>
         {user ? (
-          <button className="btn ghost auth-btn" onClick={handleSignOut}>
-            {user.name} ▾
-          </button>
+          <>
+            <Link
+              href="/cuenta"
+              className={"btn ghost auth-btn" + (isAccount ? " active" : "")}
+            >
+              {user.name} ▾
+            </Link>
+            <button className="btn ghost" onClick={handleSignOut}>
+              Salir
+            </button>
+          </>
         ) : (
           <Link href="/login" className="btn auth-btn">
             Iniciar Sesión
@@ -104,9 +113,34 @@ export function Nav() {
         <Link href="/about" className={isAbout ? "active" : ""} onClick={close}>
           Acerca de
         </Link>
-        <Link href="/login" className={isAuth ? "active" : ""} onClick={close}>
-          {user ? "Cuenta" : "Iniciar Sesión"}
-        </Link>
+        {user ? (
+          <Link
+            href="/cuenta"
+            className={isAccount ? "active" : ""}
+            onClick={close}
+          >
+            Cuenta
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className={isAuth ? "active" : ""}
+            onClick={close}
+          >
+            Iniciar Sesión
+          </Link>
+        )}
+        {user && (
+          <button
+            className="btn ghost"
+            onClick={() => {
+              close();
+              handleSignOut();
+            }}
+          >
+            Salir
+          </button>
+        )}
         <div style={{ flex: 1 }} />
         <div
           className="pixel"

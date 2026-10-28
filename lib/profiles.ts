@@ -34,3 +34,31 @@ export async function getProfileById(
 
   return data;
 }
+
+export async function updateUsername(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  username: string,
+): Promise<void> {
+  const { data: existing, error: lookupError } = await supabase
+    .from("profiles")
+    .select("id")
+    .ilike("username", username)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw lookupError;
+  }
+  if (existing !== null && existing.id !== userId) {
+    throw new Error("ESE USUARIO YA ESTÁ EN USO");
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ username })
+    .eq("id", userId);
+
+  if (error) {
+    throw error;
+  }
+}

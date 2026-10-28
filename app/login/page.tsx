@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { createClient } from "@/lib/supabase/client";
@@ -59,6 +60,21 @@ export default function LoginPage() {
   const playAsGuest = async () => {
     await signOut();
     router.push("/juegos");
+  };
+
+  const signInWithOAuth = async (provider: "google" | "github") => {
+    setError(null);
+    const supabase = createClient();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (oauthError) {
+      setError(mapAuthError(oauthError));
+    }
   };
 
   return (
@@ -143,6 +159,22 @@ export default function LoginPage() {
             />
           </div>
 
+          {tab === "in" && (
+            <div style={{ textAlign: "right", marginTop: 6 }}>
+              <Link
+                href="/recuperar"
+                className="mono"
+                style={{
+                  fontSize: 11,
+                  color: "var(--ink-faint)",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+          )}
+
           {error && (
             <div
               className="mono"
@@ -181,10 +213,18 @@ export default function LoginPage() {
 
         <div className="auth-divider">O CONTINÚA CON</div>
         <div className="social">
-          <button className="btn ghost" type="button">
+          <button
+            className="btn ghost"
+            type="button"
+            onClick={() => signInWithOAuth("google")}
+          >
             ◆ GOOGLE
           </button>
-          <button className="btn ghost" type="button">
+          <button
+            className="btn ghost"
+            type="button"
+            onClick={() => signInWithOAuth("github")}
+          >
             ▣ GITHUB
           </button>
         </div>

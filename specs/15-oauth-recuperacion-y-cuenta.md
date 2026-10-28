@@ -1,6 +1,6 @@
 # 15 — OAuth, recuperación de contraseña y pantalla de cuenta
 
-**Estado:** Borrador
+**Estado:** Implementado
 **Depende de:** SPEC 14
 **Fecha:** 2026-10-27
 
@@ -47,12 +47,12 @@ Cada paso deja el proyecto funcional (`npm run dev` arranca sin errores).
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] Pulsar ◆ GOOGLE o ▣ GITHUB en `/login` redirige al proveedor y, al volver, deja al jugador con sesión iniciada y un perfil creado en `profiles`.
-- [ ] El enlace "¿Olvidaste tu contraseña?" envía el correo de recuperación y la ruta `/nueva-contrasena` permite establecer una contraseña nueva y queda autenticado con ella.
-- [ ] Desde `/cuenta`, cambiar el username falla con un error visible si ya está tomado, y tiene éxito en caso contrario, reflejándose de inmediato en el Nav.
-- [ ] Los scores guardados antes del cambio de username en `/cuenta` conservan el nombre original en el leaderboard.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] Pulsar ◆ GOOGLE o ▣ GITHUB en `/login` redirige al proveedor y, al volver, deja al jugador con sesión iniciada y un perfil creado en `profiles`.
+- [x] El enlace "¿Olvidaste tu contraseña?" envía el correo de recuperación y la ruta `/nueva-contrasena` permite establecer una contraseña nueva y queda autenticado con ella.
+- [x] Desde `/cuenta`, cambiar el username falla con un error visible si ya está tomado, y tiene éxito en caso contrario, reflejándose de inmediato en el Nav.
+- [x] Los scores guardados antes del cambio de username en `/cuenta` conservan el nombre original en el leaderboard.
 
 ## Decisiones tomadas y descartadas
 
