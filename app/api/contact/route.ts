@@ -19,6 +19,31 @@ function sanitizeForEmailHeader(value: string) {
   return value.replace(CONTROL_CHARS_REGEX, "").trim();
 }
 
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 3;
+const rateLimitState = new Map<string, number[]>();
+
+function getClientIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  return forwardedFor?.split(",")[0]?.trim() || "unknown";
+}
+
+function isRateLimited(ip: string) {
+  const now = Date.now();
+  const recentTimestamps = (rateLimitState.get(ip) ?? []).filter(
+    (timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS,
+  );
+
+  if (recentTimestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
+    rateLimitState.set(ip, recentTimestamps);
+    return true;
+  }
+
+  recentTimestamps.push(now);
+  rateLimitState.set(ip, recentTimestamps);
+  return false;
+}
+
 export async function POST(request: Request) {
   const body = (await request.json()) as Partial<ContactPayload>;
   const name = body.name?.trim() ?? "";
@@ -50,6 +75,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { ok: false, error: "El correo electrónico no es válido." },
       { status: 400 },
+    );
+  }
+
+  const clientIp = getClientIp(request);
+  if (isRateLimited(clientIp)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Demasiados mensajes enviados. Intenta de nuevo más tarde.",
+      },
+      { status: 429 },
     );
   }
 
