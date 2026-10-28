@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Arcade Vault: plataforma para jugar juegos arcade online y competir por la mayor cantidad de puntos. La UI está implementada por completo (home, catálogo, detalle, reproductor, salón de la fama, about/contacto, login) y hay cuatro juegos jugables: **asteroides**, **tetris**, **arkanoid** y **snake**. El catálogo y las puntuaciones viven en Supabase.
+Arcade Vault: plataforma para jugar juegos arcade online y competir por la mayor cantidad de puntos. La UI está implementada por completo (home, catálogo, detalle, reproductor, salón de la fama, about/contacto, login) y hay cinco juegos jugables: **asteroides**, **tetris**, **arkanoid**, **snake** y **frogger**. El catálogo y las puntuaciones viven en Supabase.
 
 No hay suite de tests configurada todavía: la verificación de cada feature se hace en el navegador (ver `/spec-impl`).
 
@@ -14,7 +14,7 @@ No hay suite de tests configurada todavía: la verificación de cada feature se 
 - Supabase (`@supabase/ssr` + `@supabase/supabase-js`) para catálogo y leaderboard.
 - Resend para el formulario de contacto.
 - Alias de import `@/*` apunta a la raíz del proyecto (ver `tsconfig.json`).
-- `next.config.ts` habilita `cacheComponents`, `partialPrefetching` y `experimental.agentFeedback`. Next.js 16 introduce cambios de API respecto a versiones previas — si surgen dudas sobre convenciones o APIs, consultar `node_modules/next/dist/docs/` antes de asumir comportamiento de versiones anteriores (ver nota en `AGENTS.md`, que es regenerada automáticamente por `next dev`, no editar a mano).
+- `next.config.ts` habilita `cacheComponents`, `partialPrefetching` y `experimental.agentFeedback`, y declara `allowedDevOrigins` para probar el servidor de desarrollo desde un dispositivo móvil real en la misma LAN. Next.js 16 introduce cambios de API respecto a versiones previas — si surgen dudas sobre convenciones o APIs, consultar `node_modules/next/dist/docs/` antes de asumir comportamiento de versiones anteriores (ver nota en `AGENTS.md`, que es regenerada automáticamente por `next dev`, no editar a mano).
 
 Scripts: `npm run dev`, `build`, `start`, `lint`, `format`, `format:check`.
 
@@ -41,15 +41,22 @@ Las páginas que leen datos en vivo declaran `export const instant = false`, por
 ### Juegos
 
 Todos los juegos viven en `components/games/` y se exponen por el **registry** (`components/games/registry.ts`), que es el único punto de acoplamiento con el reproductor:
-(busca en references\implemented-games.md) cuando necesites mirar cuales juegos estan implementados. `references/game-suggestions.md` es el backlog de candidatos (pendientes/implementados/descartados) mantenido por el agente `game-planner`.
+consultar `references/implemented-games.md` cuando se necesite saber qué juegos están implementados. `references/game-suggestions.md` es el backlog de candidatos (pendientes/implementados/descartados) mantenido por el agente `game-planner`.
 
 ```ts
 GAME_REGISTRY: Record<string, ArcadeGameEntry>;
 // component: ComponentType<ArcadeGameProps & RefAttributes<ArcadeGameHandle>>
 // hudStats: HudStatKey[]  ("score" | "lives" | "level" | "lines")
 // initialStats: ArcadeStats
-// aspectRatio?: string    (p. ej. "1 / 2" en tetris; por defecto 4/3)
+// aspectRatio?: string       (p. ej. "1 / 2" en tetris, "8 / 7" en frogger; por defecto 4/3)
+// skinOverrides?: Partial<Record<SkinId, Partial<GameSkin>>>  (paleta por skin, ver más abajo)
 ```
+
+Módulos compartidos en `components/games/`, además de los juegos:
+
+- `skins.ts` — `SkinId` (`clasico`/`neon`/`retro`), `GameSkin`, `GAME_SKINS`, `resolveSkin`/`applySkinOverride`/`hexToRgba`. Cada juego aplica aquí su `skinOverrides` del registry.
+- `canvas.ts` — `setupResponsiveCanvas`, con tope de DPR (SPEC 10/13).
+- `touch-controls.tsx` — `TouchControls`, con una entrada por juego en `TOUCH_CONTROLS` (SPEC 11/12); el agente `mobile-porter` la mantiene sincronizada con `GAME_REGISTRY`.
 
 Contrato de cada componente de juego:
 
@@ -60,9 +67,11 @@ Contrato de cada componente de juego:
 
 `game-player.tsx` resuelve el juego por `game.id`; si no hay entrada en el registry, cae a un modo decorativo (puntuación simulada) para juegos del catálogo aún sin implementar.
 
-`ArcadeGameProps` incluye `skin: GameSkin` (tipo y paletas en `components/games/skins.ts`). Los juegos migrados a skins leen el color siempre vía `skinRef.current` (ref sincronizada por `useEffect`, nunca dependencia del loop principal) en vez de literales hardcodeados; `references/game-with-themes.md` lleva el registro de qué juegos ya migraron.
+`ArcadeGameProps` incluye `skin: GameSkin` (tipo y paletas en `components/games/skins.ts`). Los juegos leen el color siempre vía `skinRef.current` (ref sincronizada por `useEffect`, nunca dependencia del loop principal) en vez de literales hardcodeados. Los cinco juegos del registry ya tienen sus tres skins (`clasico`/`neon`/`retro`); `references/game-with-themes.md` es el registro que mantiene el agente `skin-designer`.
 
 Los assets de cada juego van en `public/games/<id>/` y se referencian por ruta absoluta.
+
+`app/data.ts` concentra los tipos de UI compartidos (`Game`, `GameCategory`, `ScoreRow`, `CATS`), consumidos por los componentes y por `lib/games.ts`; la metadata real de cada juego sigue viniendo de Supabase, no de este archivo.
 
 ### Datos (Supabase)
 
@@ -83,19 +92,29 @@ No hay auth real. `components/auth-provider.tsx` + `lib/storage.ts` guardan solo
 - **Formateo automático:** un hook `PostToolUse` (`.claude/settings.json` → `.claude/hooks/format-file.mjs`) corre Prettier sobre cualquier archivo formateable y `eslint --fix` sobre código JS/TS tras cada `Write`/`Edit`/`NotebookEdit`. Solo aplica en este repo — no hace falta formatear a mano.
 - **`references/`** no es código de producción:
   - `references/templates/` → prototipo HTML/JSX original de la UI.
-  - `references/started-games/` → juegos vanilla (`02-asteroids`, `03-tetris`, `04-arkanoid`) que son la fuente de los ports.
-  - `references/source-assets/` → sprites y assets crudos.
+  - `references/gamepad-assets/` → assets del rediseño de controles táctiles (SPEC 12).
+  - `references/implemented-games.md`, `references/game-with-themes.md`, `references/game-performance.md`, `references/game-suggestions.md` → registros vivos que mantienen los agentes de la sección de abajo, cada uno con su propio alcance.
 
 ## Skills y agentes
 
-- **`game-planner`** (`.claude/agents/game-planner.md`, subagente): decide qué juego añadir a continuación. Audita lo implementado, puntúa candidatos contra el contrato del registry y los huecos del catálogo, y mantiene el backlog en `references/game-suggestions.md`. No escribe specs: su salida alimenta `/add-game`. Es el paso previo, no un sustituto, de esa skill.
-- **`game-jam`** (`.claude/agents/game-jam.md`, subagente): recibe un juego ya decidido (no un tema para elegir libremente) y genera su dossier completo, descompuesto en al menos dos specs secuenciales dentro de `specs/game-jam/<game-id>/`. Solo escribe specs (sin código, sin Supabase, sin tocar el backlog de `game-planner`); queda fuera del pipeline `game-planner` → `/add-game` → `/spec-impl`, es un generador independiente de borradores para revisión manual.
-- **`skin-designer`** (`.claude/agents/skin-designer.md`, subagente): implementa las skins `clasico`/`neon`/`retro` de **un solo juego por invocación**, siempre el que se le indique explícitamente (nunca elige ni audita el catálogo completo). Escribe código directamente (sin spec previa), crea/consume la capa compartida `components/games/skins.ts` y deja el registro en `references/game-with-themes.md`. No toca Supabase, no hace commits, queda fuera del pipeline `game-planner` → `/add-game`.
-- **`mobile-porter`** (`.claude/agents/mobile-porter.md`, subagente): audita y corrige la experiencia en navegador móvil (`pointer: coarse`) de **todo el sitio en cada invocación** (home, catálogo, detalle, salón de la fama, about, login), usando SPEC 11 como patrón de referencia (breakpoint combinado `max-width: 720px`/`pointer: coarse`, visibilidad solo por CSS). Excluye explícitamente el reproductor y los controles táctiles de los juegos, ya resueltos por esa spec. Escribe CSS/código directamente, sin spec previa; no toca Supabase ni hace commits.
-- **`game-performance-booster`** (`.claude/agents/game-performance-booster.md`, subagente): audita y corrige el performance de render de **un solo juego por invocación**, siempre el indicado por su `id` de `GAME_REGISTRY` (nunca elige ni audita el catálogo completo). Usa SPEC 13 como catálogo de antipatrones de referencia (DPR sin tope, `shadowBlur`/`shadowColor` reconfigurado por forma, reasignación de arrays por frame) y mide FPS inyectando un script temporal vía Chrome, que retira al terminar. Nunca cambia el aspecto visual ni la jugabilidad, nunca toca las paletas de `components/games/skins.ts`. Escribe código directamente, sin spec previa; no toca Supabase, no hace commits, y mantiene su propio registro en `references/game-performance.md`.
-- **`/add-game`** (`.claude/skills/add-game/`, local a este repo): diseña la spec de un juego nuevo con leaderboard. Es una especialización de `/spec` para el dominio arcade; no escribe código, solo `specs/NN-juego-<id>.md`. Sus referencias (`port-recipe.md`, `platform-integration.md`, `game-spec-notes.md`) documentan la receta de port al stack React/canvas/Supabase. Usarla siempre que se vaya a añadir un juego.
-- **`/spec-impl-game`** (`.claude/skills/spec-impl-game/`, local a este repo): especialización de `/spec-impl` para specs de juego. Ejecuta sus mismas cuatro fases (incluida la búsqueda ampliada a `specs/game-jam/<game-id>/`) y, al cerrar la spec como `Implementada`, dispara en secuencia (nunca en paralelo) los subagentes `skin-designer` y luego `mobile-porter`. Usarla en vez de `/spec-impl` cuando la spec añade un juego nuevo al registry.
-- **`/impeccable`** para diseñar o revisar interfaz de usuario, respetando las excepciones ya registradas en `.impeccable/config.json`.
+Cada entrada enlaza su definición completa; no duplicar aquí sus reglas internas.
+
+### Subagentes (`.claude/agents/`)
+
+- **game-planner** — decide qué juego añadir a continuación y mantiene el backlog `references/game-suggestions.md`. → `.claude/agents/game-planner.md`
+- **game-jam** — convierte un juego ya decidido en un dossier de tres specs secuenciales en `specs/game-jam/<game-id>/`. → `.claude/agents/game-jam.md`
+- **skin-designer** — implementa las skins `clasico`/`neon`/`retro` de un solo juego por invocación. → `.claude/agents/skin-designer.md`
+- **mobile-porter** — audita y corrige la experiencia móvil de todo el sitio en cada invocación. → `.claude/agents/mobile-porter.md`
+- **game-performance-booster** — audita y corrige el performance de render de un solo juego, midiendo FPS en Chrome. → `.claude/agents/game-performance-booster.md`
+
+### Skills (`.claude/skills/`)
+
+- **`/spec`, `/spec-impl`** — flujo spec-driven (instaladas de `Klerith/fernando-skills`; espejo en `.agents/skills/`). → `.claude/skills/spec/`, `.claude/skills/spec-impl/`
+- **`/add-game`** — diseña la spec de un juego nuevo con leaderboard; especialización de `/spec`. Local al repo. → `.claude/skills/add-game/`
+- **`/spec-impl-game`** — como `/spec-impl`, y al cerrar la spec dispara en secuencia `skin-designer` y luego `mobile-porter`. Local al repo. → `.claude/skills/spec-impl-game/`
+- **`/impeccable`** — diseño/revisión de UI, respetando las excepciones de `.impeccable/config.json`. Skill global, instalada fuera del repo.
+
+Pipeline: `game-planner` → `/add-game` → `/spec-impl-game`. `game-jam` y los tres agentes de pulido (`skin-designer`, `mobile-porter`, `game-performance-booster`) quedan fuera de ese pipeline. Ningún agente de esta lista hace commits.
 
 ## Flujo de trabajo: Spec Driven Design
 
@@ -107,7 +126,7 @@ npx skills@latest add Klerith/fernando-skills
 
 Reglas vigentes del flujo:
 
-- Toda feature nueva pasa por una spec en `specs/` antes de tocar código. Numeración secuencial (`NN-slug.md`); van 10 specs, todas implementadas.
+- Toda feature nueva pasa por una spec en `specs/` antes de tocar código. Numeración secuencial (`NN-slug.md`); van 13 specs, todas cerradas (el estado final aparece como `Implementado` en las primeras once y `Implementada` en las últimas; ambas formas cuentan — usar `Implementada` en specs nuevas).
 - Las specs se escriben **en español**, con cabecera de líneas en negrita (`**Estado:**` / `**Depende de:**` / `**Fecha:**` / `**Objetivo:**`), que es la desviación aceptada respecto al `template.md` en inglés. Al escribir una spec nueva, seguir las dos últimas de `specs/` como referencia.
 - Nacen en `**Estado:** Borrador`; nunca auto-aprobar. Al terminar la implementación se pasan a `Implementada` y se marcan los criterios de aceptación.
 - `specs/.spec-config.yml` tiene `AutoCreateBranch: true`: `/spec-impl` crea y cambia a la rama `spec-NN-slug` sin preguntar. El trabajo se integra a `main` por PR.

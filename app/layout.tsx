@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { Press_Start_2P, JetBrains_Mono, Courier_Prime } from "next/font/google";
+import {
+  Press_Start_2P,
+  JetBrains_Mono,
+  Courier_Prime,
+} from "next/font/google";
 import "./globals.css";
 import "./arcade-vault.css";
 import { AuthProvider } from "@/components/auth-provider";
@@ -24,7 +28,8 @@ const courierPrime = Courier_Prime({
 
 export const metadata: Metadata = {
   title: "Arcade Vault",
-  description: "Plataforma para jugar online y competir por la mayor cantidad de puntos.",
+  description:
+    "Plataforma para jugar online y competir por la mayor cantidad de puntos.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -33,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es"
       className={`${pressStart2P.variable} ${jetBrainsMono.variable} ${courierPrime.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <AuthProvider>
           <div className="av-bg" />
           <div className="av-noise" />

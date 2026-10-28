@@ -127,7 +127,12 @@ export function GamePlayer({ game }: { game: Game }) {
     setSaveError(null);
     try {
       const supabase = createClient();
-      await saveScore(supabase, { gameId: game.id, name, score });
+      await saveScore(supabase, {
+        gameId: game.id,
+        name,
+        score,
+        userId: user?.id ?? null,
+      });
       setSaved(true);
     } catch {
       setSaveError("No se pudo guardar la puntuación. Inténtalo de nuevo.");
