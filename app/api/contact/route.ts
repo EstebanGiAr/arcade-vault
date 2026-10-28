@@ -9,6 +9,10 @@ type ContactPayload = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const MAX_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_MESSAGE_LENGTH = 2000;
+
 export async function POST(request: Request) {
   const body = (await request.json()) as Partial<ContactPayload>;
   const name = body.name?.trim() ?? "";
@@ -18,14 +22,28 @@ export async function POST(request: Request) {
   if (!name || !email || !message) {
     return NextResponse.json(
       { ok: false, error: "Todos los campos son obligatorios." },
-      { status: 400 }
+      { status: 400 },
+    );
+  }
+
+  if (
+    name.length > MAX_NAME_LENGTH ||
+    email.length > MAX_EMAIL_LENGTH ||
+    message.length > MAX_MESSAGE_LENGTH
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Uno de los campos excede la longitud máxima permitida.",
+      },
+      { status: 400 },
     );
   }
 
   if (!EMAIL_REGEX.test(email)) {
     return NextResponse.json(
       { ok: false, error: "El correo electrónico no es válido." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -40,8 +58,11 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json(
-      { ok: false, error: "No se pudo enviar el mensaje. Intenta de nuevo más tarde." },
-      { status: 500 }
+      {
+        ok: false,
+        error: "No se pudo enviar el mensaje. Intenta de nuevo más tarde.",
+      },
+      { status: 500 },
     );
   }
 
