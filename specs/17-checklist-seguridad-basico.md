@@ -1,6 +1,6 @@
 # 17 — Checklist de seguridad básico
 
-**Estado:** Aprobada
+**Estado:** Implementada
 **Depende de:** SPEC 04, SPEC 14, SPEC 15
 **Fecha:** 2026-10-27
 
@@ -50,17 +50,17 @@ Cada paso deja el proyecto funcional (`npm run dev` arranca sin errores).
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] Las respuestas HTTP de cualquier ruta del sitio incluyen `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` y `Referrer-Policy: strict-origin-when-cross-origin`.
-- [ ] `get_advisors(security)` ya no reporta los warnings `anon_security_definer_function_executable` ni `authenticated_security_definer_function_executable` para `handle_new_user`/`rls_auto_enable`.
-- [ ] Registrar una cuenta nueva con email/contraseña sigue creando su fila correspondiente en `profiles` después de aplicar el `REVOKE`.
-- [ ] RLS sigue habilitado en `games`, `scores` y `profiles`, confirmado por la auditoría de esta spec.
-- [ ] La spec deja documentados, como prerequisito manual pendiente del usuario, los 3 ajustes de Auth (longitud mínima de contraseña, leaked password protection, límite de signups por IP) con el estado observado en advisors al cierre.
-- [ ] Visitar `/cuenta` sin sesión iniciada redirige a `/login?next=/cuenta` sin renderizar el formulario de cuenta.
-- [ ] Visitar `/nueva-contrasena` sin sesión redirige a `/recuperar`.
-- [ ] El flujo completo de recuperación de contraseña de SPEC 15 (correo → `/auth/callback?type=recovery` → `/nueva-contrasena` con sesión → `updateUser`) sigue funcionando igual que antes de este cambio.
-- [ ] `app/cuenta/page.tsx` ya no contiene el `useEffect` de redirección client-side por falta de sesión.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] Las respuestas HTTP de cualquier ruta del sitio incluyen `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` y `Referrer-Policy: strict-origin-when-cross-origin`.
+- [x] `get_advisors(security)` ya no reporta los warnings `anon_security_definer_function_executable` ni `authenticated_security_definer_function_executable` para `handle_new_user`/`rls_auto_enable`.
+- [ ] Registrar una cuenta nueva con email/contraseña sigue creando su fila correspondiente en `profiles` después de aplicar el `REVOKE`. **(Pendiente — bloqueado por `email rate limit exceeded` de Supabase durante la verificación; ver "Verificación final (resultado)". Reintentar cuando el límite se reinicie.)**
+- [x] RLS sigue habilitado en `games`, `scores` y `profiles`, confirmado por la auditoría de esta spec.
+- [x] La spec deja documentados, como prerequisito manual pendiente del usuario, los 3 ajustes de Auth (longitud mínima de contraseña, leaked password protection, límite de signups por IP) con el estado observado en advisors al cierre.
+- [x] Visitar `/cuenta` sin sesión iniciada redirige a `/login?next=/cuenta` sin renderizar el formulario de cuenta.
+- [x] Visitar `/nueva-contrasena` sin sesión redirige a `/recuperar`.
+- [ ] El flujo completo de recuperación de contraseña de SPEC 15 (correo → `/auth/callback?type=recovery` → `/nueva-contrasena` con sesión → `updateUser`) sigue funcionando igual que antes de este cambio. **(Pendiente — mismo bloqueo de `email rate limit exceeded`; ver "Verificación final (resultado)". Reintentar cuando el límite se reinicie.)**
+- [x] `app/cuenta/page.tsx` ya no contiene el `useEffect` de redirección client-side por falta de sesión.
 
 ## Auditoría de RLS (resultado)
 
@@ -75,6 +75,17 @@ Ejecutada el 2026-10-27 sobre el proyecto de Supabase. Resultado: **sin brechas,
   - `scores_select_public` — `SELECT`, `qual: true`.
   - `scores_insert_public` — `INSERT`, `with_check: user_id IS NULL OR user_id = auth.uid()`.
 - Modelo observado coincide con el esperado: lectura pública en las 3 tablas, escritura limitada al propio dueño (`profiles`, `scores`) o a `service_role` (que bypassea RLS; aplica a altas/ediciones de `games`).
+
+## Verificación final (resultado)
+
+Ejecutada el 2026-10-27 contra `npm run dev` en local.
+
+- ✅ `npm run build` y `npm run lint` sin errores (2 warnings preexistentes en `arkanoid-game.tsx`, ajenos a esta spec).
+- ✅ Respuesta HTTP de `/` incluye los 3 headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`), confirmado por `curl -D -`.
+- ✅ `get_advisors(security)` ya no reporta `anon_security_definer_function_executable` ni `authenticated_security_definer_function_executable` (ver sección de migración del paso 3). Persiste `auth_leaked_password_protection` (WARN), uno de los 3 ajustes manuales documentados abajo, pendiente de activación en el dashboard.
+- ✅ Visitar `/cuenta` sin sesión responde `307` a `/login?next=/cuenta`; `/login?next=/cuenta` carga con `200` (sin ciclo de redirección).
+- ✅ Visitar `/nueva-contrasena` sin sesión responde `307` a `/recuperar`; `/recuperar` carga con `200`.
+- ⏸️ **Pendiente de verificación manual:** registrar una cuenta nueva (confirmar que `profiles` se sigue poblando vía `handle_new_user` tras el `REVOKE`) y el flujo completo de recuperación de contraseña de SPEC 15. Ambos requieren que Supabase envíe un correo real (confirmación / recuperación) y el proyecto devolvió `email rate limit exceeded` en los dos intentos realizados durante esta verificación — límite de envíos del proyecto, acumulado por las pruebas de SPEC 16 el mismo día, no causado por el `REVOKE` de esta spec. Evidencia indirecta a favor de que el trigger sigue funcionando: en Postgres, un trigger (de tabla o de evento) se ejecuta con los privilegios de su dueño al dispararse por el evento (`INSERT` en `auth.users`), sin requerir que el rol causante del evento tenga `EXECUTE` sobre la función — ese grant solo es necesario para invocación directa (`SELECT fn()` / `/rest/v1/rpc/...`), que es exactamente lo que se revocó. Queda como acción de seguimiento del usuario: reintentar el registro de una cuenta y el flujo de recuperación cuando el rate limit de correo se reinicie, y confirmar ambos criterios antes de dar la spec por cerrada.
 
 ## Decisiones tomadas y descartadas
 
