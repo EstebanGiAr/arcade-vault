@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { createClient } from "@/lib/supabase/client";
@@ -157,6 +158,22 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
+
+          {tab === "in" && (
+            <div style={{ textAlign: "right", marginTop: 6 }}>
+              <Link
+                href="/recuperar"
+                className="mono"
+                style={{
+                  fontSize: 11,
+                  color: "var(--ink-faint)",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+          )}
 
           {error && (
             <div
