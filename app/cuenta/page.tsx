@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { updateUsername } from "@/lib/profiles";
@@ -96,13 +95,6 @@ function CuentaForm({
 
 export default function CuentaPage() {
   const { user, loading, refreshProfile } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && user === null) {
-      router.push("/login");
-    }
-  }, [loading, user, router]);
 
   if (loading || user === null) {
     return null;

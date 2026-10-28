@@ -27,7 +27,25 @@ export async function updateSession(request: NextRequest) {
   );
 
   // No eliminar: refresca el token de sesión en cada request.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+
+  if (!user && pathname.startsWith("/cuenta")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "?next=/cuenta";
+    return NextResponse.redirect(url);
+  }
+
+  if (!user && pathname.startsWith("/nueva-contrasena")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/recuperar";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }
