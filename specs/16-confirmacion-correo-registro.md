@@ -1,6 +1,6 @@
 # 16 — Confirmación de correo electrónico al registrarse
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 14, SPEC 15
 **Fecha:** 2026-10-27
 
@@ -46,14 +46,14 @@ Cada paso deja el proyecto funcional (`npm run dev` arranca sin errores).
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] Registrarse con email/contraseña ya no deja sesión iniciada de inmediato: muestra la pantalla "revisa tu correo" dentro de `.auth-card` con el email usado.
-- [ ] Pulsar el botón de reenviar en esa pantalla llama a `resendConfirmationEmail` y queda deshabilitado con un contador visible durante 60 segundos.
-- [ ] Confirmar el correo mediante el enlace recibido redirige a `/auth/callback` y deja al jugador con sesión iniciada en `/juegos`.
-- [ ] Intentar iniciar sesión (pestaña INICIAR SESIÓN) con una cuenta cuyo correo no está confirmado muestra el mensaje "CONFIRMA TU CORREO ANTES DE INICIAR SESIÓN" junto con la opción de reenviar, en vez del error genérico de credenciales inválidas.
-- [ ] Iniciar sesión con Google o GitHub sigue dejando sesión iniciada de inmediato, sin pasar por ninguna pantalla de confirmación de correo.
-- [ ] Jugar como invitado sigue funcionando sin cambios mientras una cuenta recién creada no ha confirmado su correo.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] Registrarse con email/contraseña ya no deja sesión iniciada de inmediato: muestra la pantalla "revisa tu correo" dentro de `.auth-card` con el email usado.
+- [x] Pulsar el botón de reenviar en esa pantalla llama a `resendConfirmationEmail` y queda deshabilitado con un contador visible durante 60 segundos.
+- [x] Confirmar el correo mediante el enlace recibido redirige a `/auth/callback` y deja al jugador con sesión iniciada en `/juegos`.
+- [x] Intentar iniciar sesión (pestaña INICIAR SESIÓN) con una cuenta cuyo correo no está confirmado muestra el mensaje "CONFIRMA TU CORREO ANTES DE INICIAR SESIÓN" junto con la opción de reenviar, en vez del error genérico de credenciales inválidas.
+- [x] Iniciar sesión con Google o GitHub sigue dejando sesión iniciada de inmediato, sin pasar por ninguna pantalla de confirmación de correo.
+- [x] Jugar como invitado sigue funcionando sin cambios mientras una cuenta recién creada no ha confirmado su correo.
 
 ## Decisiones tomadas y descartadas
 
