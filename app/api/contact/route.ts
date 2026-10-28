@@ -13,6 +13,12 @@ const MAX_NAME_LENGTH = 100;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_MESSAGE_LENGTH = 2000;
 
+const CONTROL_CHARS_REGEX = /[\x00-\x1f\x7f]/g;
+
+function sanitizeForEmailHeader(value: string) {
+  return value.replace(CONTROL_CHARS_REGEX, "").trim();
+}
+
 export async function POST(request: Request) {
   const body = (await request.json()) as Partial<ContactPayload>;
   const name = body.name?.trim() ?? "";
@@ -47,12 +53,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const safeName = sanitizeForEmailHeader(name);
+
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const { error } = await resend.emails.send({
     from: "Arcade Vault <onboarding@resend.dev>",
     to: process.env.CONTACT_TO_EMAIL as string,
-    subject: `Nuevo mensaje de contacto de ${name}`,
+    subject: `Nuevo mensaje de contacto de ${safeName}`,
     text: `Nombre: ${name}\nCorreo: ${email}\n\nMensaje:\n${message}`,
   });
 
