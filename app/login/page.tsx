@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { getProfileByUsername } from "@/lib/profiles";
+import { resendConfirmationEmail } from "@/lib/auth";
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 function mapAuthError(err: unknown): string {
   const message = err instanceof Error ? err.message : "";
@@ -16,7 +19,15 @@ function mapAuthError(err: unknown): string {
   if (/invalid login credentials/i.test(message)) {
     return "CREDENCIALES INVÁLIDAS";
   }
+  if (/email not confirmed/i.test(message)) {
+    return "CONFIRMA TU CORREO ANTES DE INICIAR SESIÓN";
+  }
   return message || "ALGO SALIÓ MAL. INTENTA DE NUEVO";
+}
+
+function isUnconfirmedEmailError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : "";
+  return /email not confirmed/i.test(message);
 }
 
 export default function LoginPage() {
@@ -26,17 +37,33 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingConfirmation, setPendingConfirmation] = useState<{
+    email: string;
+  } | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
   const router = useRouter();
   const { signIn, signUp, signOut } = useAuth();
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setUnconfirmedEmail(null);
     setLoading(true);
 
     try {
       if (tab === "in") {
         await signIn({ email, password: pass });
+        router.push("/juegos");
       } else {
         const username = (user || "PLAYER1").toUpperCase().slice(0, 10);
         const supabase = createClient();
@@ -48,12 +75,30 @@ export default function LoginPage() {
         }
 
         await signUp({ email, password: pass, username });
+        setPendingConfirmation({ email });
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+        setLoading(false);
       }
-
-      router.push("/juegos");
     } catch (err) {
       setError(mapAuthError(err));
+      if (tab === "in" && isUnconfirmedEmailError(err)) {
+        setUnconfirmedEmail(email);
+      }
       setLoading(false);
+    }
+  };
+
+  const resend = async (email: string) => {
+    setResending(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      await resendConfirmationEmail(supabase, email);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch (err) {
+      setError(mapAuthError(err));
+    } finally {
+      setResending(false);
     }
   };
 
@@ -76,6 +121,95 @@ export default function LoginPage() {
       setError(mapAuthError(oauthError));
     }
   };
+
+  if (pendingConfirmation) {
+    return (
+      <div className="av-auth-wrap fade-in">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="mark" />
+            <h2 className="neon-cyan">ARCADE VAULT</h2>
+            <div
+              className="mono"
+              style={{
+                fontSize: 11,
+                color: "var(--ink-faint)",
+                letterSpacing: "0.16em",
+                marginTop: 6,
+              }}
+            >
+              ACCESO AL SISTEMA · v2.6
+            </div>
+          </div>
+
+          <div style={{ marginTop: 24, textAlign: "center" }}>
+            <h3 className="neon-cyan" style={{ fontSize: 14 }}>
+              REVISA TU CORREO
+            </h3>
+            <p
+              className="mono"
+              style={{
+                fontSize: 12,
+                color: "var(--ink-faint)",
+                letterSpacing: "0.04em",
+                marginTop: 12,
+                lineHeight: 1.6,
+              }}
+            >
+              Enviamos un enlace de confirmación a
+              <br />
+              <span style={{ color: "var(--cyan)" }}>
+                {pendingConfirmation.email}
+              </span>
+              <br />
+              Ábrelo para activar tu cuenta.
+            </p>
+
+            {error && (
+              <div
+                className="mono"
+                style={{
+                  color: "var(--magenta)",
+                  fontSize: 12,
+                  marginTop: 14,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="btn ghost"
+              style={{ width: "100%", marginTop: 18 }}
+              disabled={resending || resendCooldown > 0}
+              onClick={() => resend(pendingConfirmation.email)}
+            >
+              {resendCooldown > 0
+                ? `REENVIAR CORREO (${resendCooldown}s)`
+                : resending
+                  ? "ENVIANDO…"
+                  : "REENVIAR CORREO DE CONFIRMACIÓN"}
+            </button>
+
+            <button
+              type="button"
+              className="btn ghost"
+              style={{ width: "100%", marginTop: 10 }}
+              onClick={() => {
+                setPendingConfirmation(null);
+                setTab("in");
+                setError(null);
+              }}
+            >
+              VOLVER A INICIAR SESIÓN
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="av-auth-wrap fade-in">
@@ -187,6 +321,22 @@ export default function LoginPage() {
             >
               {error}
             </div>
+          )}
+
+          {unconfirmedEmail && (
+            <button
+              type="button"
+              className="btn ghost"
+              style={{ width: "100%", marginTop: 10 }}
+              disabled={resending || resendCooldown > 0}
+              onClick={() => resend(unconfirmedEmail)}
+            >
+              {resendCooldown > 0
+                ? `REENVIAR CORREO (${resendCooldown}s)`
+                : resending
+                  ? "ENVIANDO…"
+                  : "REENVIAR CORREO DE CONFIRMACIÓN"}
+            </button>
           )}
 
           <button
