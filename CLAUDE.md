@@ -85,7 +85,7 @@ Los assets de cada juego van en `public/games/<id>/` y se referencian por ruta a
 
 ### Sesión
 
-No hay auth real. `components/auth-provider.tsx` + `lib/storage.ts` guardan solo `{ name }` en `localStorage` (clave `av_user`). La lectura se difiere al montaje en cliente para evitar mismatches de hidratación; mantener ese patrón.
+Auth real con Supabase (SPEC 14–16): email/contraseña con confirmación de correo, OAuth (Google/GitHub) y recuperación de contraseña. `components/auth-provider.tsx` expone `{ user, loading, signIn, signUp, signOut }` sobre `supabase.auth.getSession()` + `onAuthStateChange`; `user.name` viene de `profiles.username` (tabla con RLS, vinculada 1:1 a `auth.users`). `proxy.ts` (`lib/supabase/middleware.ts`) refresca el token en cada request vía `supabase.auth.getUser()` y protege `/cuenta` y `/nueva-contrasena` (SPEC 17), redirigiendo sin sesión. `lib/storage.ts` ya no guarda `{ name }`: solo persiste la skin elegida (`av_skin`).
 
 ## Herramientas del repo
 
@@ -93,7 +93,7 @@ No hay auth real. `components/auth-provider.tsx` + `lib/storage.ts` guardan solo
 - **`references/`** no es código de producción:
   - `references/templates/` → prototipo HTML/JSX original de la UI.
   - `references/gamepad-assets/` → assets del rediseño de controles táctiles (SPEC 12).
-  - `references/implemented-games.md`, `references/game-with-themes.md`, `references/game-performance.md`, `references/game-suggestions.md` → registros vivos que mantienen los agentes de la sección de abajo, cada uno con su propio alcance.
+  - `references/implemented-games.md`, `references/game-with-themes.md`, `references/game-performance.md`, `references/game-suggestions.md`, `references/security/security-audit-log.md` → registros vivos que mantienen los agentes de la sección de abajo, cada uno con su propio alcance.
 
 ## Skills y agentes
 
@@ -106,6 +106,7 @@ Cada entrada enlaza su definición completa; no duplicar aquí sus reglas intern
 - **skin-designer** — implementa las skins `clasico`/`neon`/`retro` de un solo juego por invocación. → `.claude/agents/skin-designer.md`
 - **mobile-porter** — audita y corrige la experiencia móvil de todo el sitio en cada invocación. → `.claude/agents/mobile-porter.md`
 - **game-performance-booster** — audita y corrige el performance de render de un solo juego, midiendo FPS en Chrome. → `.claude/agents/game-performance-booster.md`
+- **security-auditor** — audita la seguridad de la base de datos (Supabase: RLS, políticas, advisors, grants) y de la aplicación (headers, rutas protegidas, validación de inputs, secretos) en cada invocación; solo reporta y registra en `references/security/security-audit-log.md`, nunca corrige código ni aplica migraciones. → `.claude/agents/security-auditor.md`
 
 ### Skills (`.claude/skills/`)
 
@@ -114,7 +115,7 @@ Cada entrada enlaza su definición completa; no duplicar aquí sus reglas intern
 - **`/spec-impl-game`** — como `/spec-impl`, y al cerrar la spec dispara en secuencia `skin-designer` y luego `mobile-porter`. Local al repo. → `.claude/skills/spec-impl-game/`
 - **`/impeccable`** — diseño/revisión de UI, respetando las excepciones de `.impeccable/config.json`. Skill global, instalada fuera del repo.
 
-Pipeline: `game-planner` → `/add-game` → `/spec-impl-game`. `game-jam` y los tres agentes de pulido (`skin-designer`, `mobile-porter`, `game-performance-booster`) quedan fuera de ese pipeline. Ningún agente de esta lista hace commits.
+Pipeline: `game-planner` → `/add-game` → `/spec-impl-game`. `game-jam`, los tres agentes de pulido (`skin-designer`, `mobile-porter`, `game-performance-booster`) y `security-auditor` quedan fuera de ese pipeline. Ningún agente de esta lista hace commits.
 
 ## Flujo de trabajo: Spec Driven Design
 
