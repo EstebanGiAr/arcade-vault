@@ -1,6 +1,6 @@
 # 14 — Autenticación real con Supabase (email/contraseña)
 
-**Estado:** Aprobado
+**Estado:** Implementado
 **Depende de:** SPEC 01, SPEC 04, SPEC 06
 **Fecha:** 2026-10-27
 
@@ -83,19 +83,19 @@ Cada paso deja el proyecto funcional (`npm run dev` arranca sin errores).
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores.
-- [ ] Registrarse desde `/login` crea una fila en `auth.users` y una fila correspondiente en `profiles` con el username elegido en mayúsculas.
-- [ ] Registrarse deja al jugador con sesión iniciada de inmediato, sin pantalla de confirmación de correo.
-- [ ] Intentar registrar un username ya tomado muestra un error visible en `.auth-card` y no crea una segunda fila en `profiles`.
-- [ ] Un `INSERT` en `scores` con un `user_id` distinto al de la sesión autenticada es rechazado por RLS.
-- [ ] Jugar y guardar score con sesión iniciada escribe `scores.user_id` con el id del usuario; el input de nombre del modal viene precargado con su username pero sigue siendo editable, y `scores.name` guarda el valor final tal cual quedó escrito.
-- [ ] Si un usuario autenticado guarda dos scores con nombres distintos (por haber editado el campo), ambas filas comparten el mismo `scores.user_id`, permitiendo identificarlo como el mismo jugador aunque el nombre visible difiera.
-- [ ] Jugar como invitado (sin sesión) sigue permitiendo escribir un nombre libre y guarda el score con `user_id` null, igual que antes de este spec.
-- [ ] Recargar cualquier página tras iniciar sesión mantiene al usuario autenticado (`middleware.ts` refresca el token).
-- [ ] Cerrar sesión desde el botón del Nav invoca el `signOut` real de Supabase y el Nav vuelve a mostrar "Iniciar Sesión".
-- [ ] El salón de la fama muestra el mejor score del usuario autenticado vía `getBestScoreByUser`, no por coincidencia de nombre libre.
-- [ ] `localStorage` ya no recibe escrituras bajo la clave `av_user`.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores.
+- [x] Registrarse desde `/login` crea una fila en `auth.users` y una fila correspondiente en `profiles` con el username elegido en mayúsculas.
+- [x] Registrarse deja al jugador con sesión iniciada de inmediato, sin pantalla de confirmación de correo.
+- [x] Intentar registrar un username ya tomado muestra un error visible en `.auth-card` y no crea una segunda fila en `profiles`.
+- [x] Un `INSERT` en `scores` con un `user_id` distinto al de la sesión autenticada es rechazado por RLS.
+- [x] Jugar y guardar score con sesión iniciada escribe `scores.user_id` con el id del usuario; el input de nombre del modal viene precargado con su username pero sigue siendo editable, y `scores.name` guarda el valor final tal cual quedó escrito.
+- [x] Si un usuario autenticado guarda dos scores con nombres distintos (por haber editado el campo), ambas filas comparten el mismo `scores.user_id`, permitiendo identificarlo como el mismo jugador aunque el nombre visible difiera.
+- [x] Jugar como invitado (sin sesión) sigue permitiendo escribir un nombre libre y guarda el score con `user_id` null, igual que antes de este spec.
+- [x] Recargar cualquier página tras iniciar sesión mantiene al usuario autenticado (`middleware.ts` refresca el token).
+- [x] Cerrar sesión desde el botón del Nav invoca el `signOut` real de Supabase y el Nav vuelve a mostrar "Iniciar Sesión".
+- [x] El salón de la fama muestra el mejor score del usuario autenticado vía `getBestScoreByUser`, no por coincidencia de nombre libre.
+- [x] `localStorage` ya no recibe escrituras bajo la clave `av_user`.
 
 ## Decisiones tomadas y descartadas
 
