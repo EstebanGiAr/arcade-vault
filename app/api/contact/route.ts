@@ -53,13 +53,24 @@ export async function POST(request: Request) {
     );
   }
 
+  const contactToEmail = process.env.CONTACT_TO_EMAIL;
+  if (!contactToEmail) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "No se pudo enviar el mensaje. Intenta de nuevo más tarde.",
+      },
+      { status: 500 },
+    );
+  }
+
   const safeName = sanitizeForEmailHeader(name);
 
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const { error } = await resend.emails.send({
     from: "Arcade Vault <onboarding@resend.dev>",
-    to: process.env.CONTACT_TO_EMAIL as string,
+    to: contactToEmail,
     subject: `Nuevo mensaje de contacto de ${safeName}`,
     text: `Nombre: ${name}\nCorreo: ${email}\n\nMensaje:\n${message}`,
   });
