@@ -62,6 +62,20 @@ Cada paso deja el proyecto funcional (`npm run dev` arranca sin errores).
 - [ ] El flujo completo de recuperación de contraseña de SPEC 15 (correo → `/auth/callback?type=recovery` → `/nueva-contrasena` con sesión → `updateUser`) sigue funcionando igual que antes de este cambio.
 - [ ] `app/cuenta/page.tsx` ya no contiene el `useEffect` de redirección client-side por falta de sesión.
 
+## Auditoría de RLS (resultado)
+
+Ejecutada el 2026-10-27 sobre el proyecto de Supabase. Resultado: **sin brechas, sin cambios de código.**
+
+- RLS habilitado (`rowsecurity = true`) en `games`, `profiles` y `scores`.
+- Políticas vigentes (6, todas `roles = {public}`):
+  - `games_select_public` — `SELECT`, `qual: true` (lectura pública; sin política de escritura pública, consistente con metadata gestionada por `service_role`).
+  - `profiles_select_public` — `SELECT`, `qual: true`.
+  - `profiles_insert_own` — `INSERT`, `with_check: auth.uid() = id`.
+  - `profiles_update_own` — `UPDATE`, `qual`/`with_check: auth.uid() = id`.
+  - `scores_select_public` — `SELECT`, `qual: true`.
+  - `scores_insert_public` — `INSERT`, `with_check: user_id IS NULL OR user_id = auth.uid()`.
+- Modelo observado coincide con el esperado: lectura pública en las 3 tablas, escritura limitada al propio dueño (`profiles`, `scores`) o a `service_role` (que bypassea RLS; aplica a altas/ediciones de `games`).
+
 ## Decisiones tomadas y descartadas
 
 - **La auditoría de RLS es de verificación, no de rediseño.** Razón: decisión explícita del usuario tras confirmar que RLS ya está habilitado con políticas razonables en las 3 tablas; solo se documenta el resultado salvo que aparezca una brecha real.
