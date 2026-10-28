@@ -1,6 +1,6 @@
 # 15 — OAuth, recuperación de contraseña y pantalla de cuenta
 
-**Estado:** Borrador
+**Estado:** Aprobado
 **Depende de:** SPEC 14
 **Fecha:** 2026-10-27
 
