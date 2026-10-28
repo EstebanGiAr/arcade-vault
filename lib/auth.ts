@@ -39,6 +39,20 @@ export async function signIn(
   return data.user;
 }
 
+export async function resendConfirmationEmail(
+  supabase: SupabaseClient<Database>,
+  email: string,
+): Promise<void> {
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function signOut(
   supabase: SupabaseClient<Database>,
 ): Promise<void> {
