@@ -2,15 +2,20 @@
 
 import { useState } from "react";
 
-const MAX_POKEMON_ID = 1025;
+const POKEMON_COUNT = 1025;
+
+function spriteUrl(pokemonId: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+}
 
 export default function ContadorPage() {
   const [count, setCount] = useState(1);
   const [loadedId, setLoadedId] = useState<number | null>(null);
 
-  const pokemonId = ((count - 1) % MAX_POKEMON_ID) + 1;
-  const imgLoading = loadedId !== pokemonId;
-  const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+  const pokemonId = ((count - 1) % POKEMON_COUNT) + 1;
+  // Derivado en vez de un boolean con useEffect: hacer setState del flag al
+  // cambiar `count` dispara react-hooks/set-state-in-effect.
+  const isLoading = loadedId !== pokemonId;
 
   return (
     <div
@@ -32,7 +37,7 @@ export default function ContadorPage() {
           justifyContent: "center",
         }}
       >
-        {imgLoading && (
+        {isLoading && (
           <div
             className="mono"
             style={{ color: "var(--ink-faint)", fontSize: 12 }}
@@ -42,17 +47,19 @@ export default function ContadorPage() {
         )}
         <img
           key={pokemonId}
-          src={imageUrl}
+          src={spriteUrl(pokemonId)}
           alt={`Pokémon #${pokemonId}`}
           onLoad={() => setLoadedId(pokemonId)}
           ref={(node) => {
+            // Si la imagen viene de caché, el navegador ya disparó `load`
+            // antes de que React enganchara onLoad: sin esto queda en CARGANDO…
             if (node?.complete) setLoadedId(pokemonId);
           }}
           style={{
             width: "100%",
             height: "100%",
             objectFit: "contain",
-            display: imgLoading ? "none" : "block",
+            display: isLoading ? "none" : "block",
             imageRendering: "pixelated",
           }}
         />
