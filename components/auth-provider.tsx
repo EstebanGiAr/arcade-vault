@@ -22,6 +22,7 @@ type AuthContextValue = {
     username: string;
   }) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -70,8 +71,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOutRequest(supabaseRef.current);
   };
 
+  const refreshProfile: AuthContextValue["refreshProfile"] = async () => {
+    const supabase = supabaseRef.current;
+    const { data } = await supabase.auth.getSession();
+    const authUser = data.session?.user ?? null;
+
+    if (!authUser) {
+      setUser(null);
+      return;
+    }
+
+    const profile = await getProfileById(supabase, authUser.id);
+    setUser({ id: authUser.id, name: profile?.username ?? "JUGADOR" });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{ user, loading, signIn, signUp, signOut, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );
